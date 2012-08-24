@@ -7,7 +7,7 @@ class tzwhere(object):
     SHORTCUT_DEGREES_LONGITUDE = 1
     
     
-    def __init__(self, file='tz_world.json'):
+    def __init__(self, file='tz_world_compact.json'):
         featureCollection = json.load(open(file, 'r'))
         self.timezoneNamesToPolygons = {}
         for feature in featureCollection['features']:
@@ -22,8 +22,14 @@ class tzwhere(object):
                 for raw_poly in polys:
                     #WPS84 coordinates are [long, lat], while many conventions are [lat, long]
                     #Our data is in WPS84.  Convert to an explicit format which geolib likes.
-                    poly = [{'lat': lat, 'lng': lng} for lng, lat in raw_poly];
-                    self.timezoneNamesToPolygons[tzname].append(poly)
+                    assert len(raw_poly)%2 == 0
+                    poly = []
+                    while raw_poly:
+                        lat = raw_poly.pop()
+                        lng = raw_poly.pop()
+                        poly.append({'lat': lat, 'lng': lng})
+                    self.timezoneNamesToPolygons[tzname].append(tuple(poly))
+            
         self.timezoneLongitudeShortcuts = {};
         self.timezoneLatitudeShortcuts = {};
         for tzname in self.timezoneNamesToPolygons:
@@ -55,6 +61,16 @@ class tzwhere(object):
                       
                     self.timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + self.SHORTCUT_DEGREES_LATITUDE
+                    
+        #convert things to tuples to save memory
+        for tzname in self.timezoneNamesToPolygons.keys():
+            self.timezoneNamesToPolygons[tzname] = tuple(self.timezoneNamesToPolygons[tzname])
+        for degree in self.timezoneLatitudeShortcuts:
+            for tzname in self.timezoneLatitudeShortcuts[degree].keys():
+                self.timezoneLatitudeShortcuts[degree][tzname] = tuple(self.timezoneLatitudeShortcuts[degree][tzname])
+        for degree in self.timezoneLongitudeShortcuts.keys():
+            for tzname in self.timezoneLongitudeShortcuts[degree].keys():
+                self.timezoneLongitudeShortcuts[degree][tzname] = tuple(self.timezoneLongitudeShortcuts[degree][tzname]) 
                     
     def _point_inside_polygon(self, x, y, poly):
         n = len(poly)
@@ -92,7 +108,11 @@ class tzwhere(object):
                             return tzname
 
 if __name__ == "__main__":
+    start = datetime.datetime.now()
     w=tzwhere()
+    end = datetime.datetime.now()
+    print 'Initialized in: ',
+    print end-start
     print w.tzNameAt(float(35.295953), float(-89.662186)) #Arlington, TN
     print w.tzNameAt(float(33.58), float(-85.85)) #Memphis, TN
     print w.tzNameAt(float(61.17), float(-150.02)) #Anchorage, AK
