@@ -1,39 +1,20 @@
 #!/usr/bin/python
 
-import argparse
 import simplejson as json
 import datetime
 import math
 import pickle
 
 
-parser = argparse.ArgumentParser(description='''
-Convert lat/lng to timezones. Specify --read_pickle to initialize from a pickle file instead of the json file.
-''')
-parser.add_argument('--json_file', default='tz_world_compact.json',
-                    help='path to the json input file')
-parser.add_argument('--pickle_file', default='tz_world.pickle',
-                    help='path to the json input file')
-parser.add_argument('--read_pickle', action='store_true',
-                    help='read pickle data instead of json')
-parser.add_argument('--write_pickle', action='store_true',
-                    help='whether to output a pickle file')
-args = parser.parse_args()
-
-
 class tzwhere(object):
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
     
-    def __init__(self):
-        if args.read_pickle:
-            filename = args.pickle_file
-        else:
-            filename = args.json_file
-
+    def __init__(self,filename='tz_world_compact.json',read_pickle=False,write_pickle=False):
+        
         input_file = open(filename, 'r')
 
-        if args.read_pickle:
+        if read_pickle:
             print 'Reading pickle input file: %s' % filename
             featureCollection = pickle.load(input_file)
         else:
@@ -42,11 +23,12 @@ class tzwhere(object):
 
         input_file.close()
 
-        if args.write_pickle:
+        if write_pickle:
             print 'Writing pickle output file: %s' % PICKLE_FILENAME
             f = open(PICKLE_FILENAME, 'w')
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
             f.close()
+
 
         self.timezoneNamesToPolygons = {}
         for feature in featureCollection['features']:
@@ -147,8 +129,27 @@ class tzwhere(object):
                             return tzname
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='''
+    Convert lat/lng to timezones. Specify --read_pickle to initialize from a pickle file instead of the   json file.
+''')
+    parser.add_argument('--json_file', default='tz_world_compact.json',
+                    help='path to the json input file')
+    parser.add_argument('--pickle_file', default='tz_world.pickle',
+                    help='path to the json input file')
+    parser.add_argument('--read_pickle', action='store_true',
+                    help='read pickle data instead of json')
+    parser.add_argument('--write_pickle', action='store_true',
+                    help='whether to output a pickle file')
+    args = parser.parse_args()
+
+    if args.read_pickle:
+        filename = args.pickle_file
+    else:
+        filename = args.json_file
+
     start = datetime.datetime.now()
-    w=tzwhere()
+    w=tzwhere(filename,args.read_pickle,args.write_pickle)
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end-start
