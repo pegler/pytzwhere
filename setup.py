@@ -10,6 +10,9 @@ setup(
     name='tzwhere',
     version='1.0',
     packages=['tzwhere'],
+    package_data={
+        'tzwhere': ['tz_world.json', 'tz_world_compact.json', 'tz_world.pickle']
+        },
     include_package_data=True,
     license='MIT License',
     description='Python library to look up timezone from lat / long offline',
