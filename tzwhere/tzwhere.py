@@ -6,14 +6,18 @@ except ImportError:
     import simplejson as json
 import datetime
 import math
+import os
 import pickle
 
 
 class tzwhere(object):
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
+    # By default, use the data file in our package directory
+    DEFAULT_FILENAME = os.path.join(os.path.dirname(__file__),
+        'tz_world_compact.json')
 
-    def __init__(self, filename='tz_world_compact.json', read_pickle=False,
+    def __init__(self, filename=DEFAULT_FILENAME, read_pickle=False,
             write_pickle=False):
 
         input_file = open(filename, 'r')
