@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import simplejson as json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import datetime
 import math
 import pickle
