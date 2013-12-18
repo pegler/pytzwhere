@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import argparse
 try:
     import json
 except ImportError:
@@ -10,33 +9,16 @@ import math
 import pickle
 
 
-parser = argparse.ArgumentParser(description='''
-Convert lat/lng to timezones. Specify --read_pickle to initialize from a pickle file instead of the json file.
-''')
-parser.add_argument('--json_file', default='tz_world_compact.json',
-                    help='path to the json input file')
-parser.add_argument('--pickle_file', default='tz_world.pickle',
-                    help='path to the json input file')
-parser.add_argument('--read_pickle', action='store_true',
-                    help='read pickle data instead of json')
-parser.add_argument('--write_pickle', action='store_true',
-                    help='whether to output a pickle file')
-args = parser.parse_args()
-
-
 class tzwhere(object):
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
-    
-    def __init__(self):
-        if args.read_pickle:
-            filename = args.pickle_file
-        else:
-            filename = args.json_file
+
+    def __init__(self, filename='tz_world_compact.json', read_pickle=False,
+            write_pickle=False):
 
         input_file = open(filename, 'r')
 
-        if args.read_pickle:
+        if read_pickle:
             print 'Reading pickle input file: %s' % filename
             featureCollection = pickle.load(input_file)
         else:
@@ -45,22 +27,22 @@ class tzwhere(object):
 
         input_file.close()
 
-        if args.write_pickle:
+        if write_pickle:
             print 'Writing pickle output file: %s' % PICKLE_FILENAME
             f = open(PICKLE_FILENAME, 'w')
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
             f.close()
 
+
         self.timezoneNamesToPolygons = {}
         for feature in featureCollection['features']:
-            
+
             tzname = feature['properties']['TZID']
-            region = tzname.split('/')[0]
             if feature['geometry']['type'] == 'Polygon':
                 polys = feature['geometry']['coordinates']
                 if polys and not (tzname in self.timezoneNamesToPolygons):
                     self.timezoneNamesToPolygons[tzname] = []
-                  
+
                 for raw_poly in polys:
                     #WPS84 coordinates are [long, lat], while many conventions are [lat, long]
                     #Our data is in WPS84.  Convert to an explicit format which geolib likes.
@@ -71,7 +53,7 @@ class tzwhere(object):
                         lng = raw_poly.pop()
                         poly.append({'lat': lat, 'lng': lng})
                     self.timezoneNamesToPolygons[tzname].append(tuple(poly))
-            
+
         self.timezoneLongitudeShortcuts = {};
         self.timezoneLatitudeShortcuts = {};
         for tzname in self.timezoneNamesToPolygons:
@@ -86,24 +68,24 @@ class tzwhere(object):
                 while degree <= maxLng:
                     if degree not in self.timezoneLongitudeShortcuts:
                         self.timezoneLongitudeShortcuts[degree] = {}
-                      
+
                     if tzname not in self.timezoneLongitudeShortcuts[degree]:
                         self.timezoneLongitudeShortcuts[degree][tzname] = []
-                      
+
                     self.timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + self.SHORTCUT_DEGREES_LONGITUDE
-                  
+
                 degree = minLat
                 while degree <= maxLat:
                     if degree not in self.timezoneLatitudeShortcuts:
                         self.timezoneLatitudeShortcuts[degree] = {}
-                      
+
                     if tzname not in self.timezoneLatitudeShortcuts[degree]:
                         self.timezoneLatitudeShortcuts[degree][tzname] = []
-                      
+
                     self.timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + self.SHORTCUT_DEGREES_LATITUDE
-                    
+
         #convert things to tuples to save memory
         for tzname in self.timezoneNamesToPolygons.keys():
             self.timezoneNamesToPolygons[tzname] = tuple(self.timezoneNamesToPolygons[tzname])
@@ -112,12 +94,12 @@ class tzwhere(object):
                 self.timezoneLatitudeShortcuts[degree][tzname] = tuple(self.timezoneLatitudeShortcuts[degree][tzname])
         for degree in self.timezoneLongitudeShortcuts.keys():
             for tzname in self.timezoneLongitudeShortcuts[degree].keys():
-                self.timezoneLongitudeShortcuts[degree][tzname] = tuple(self.timezoneLongitudeShortcuts[degree][tzname]) 
-                    
+                self.timezoneLongitudeShortcuts[degree][tzname] = tuple(self.timezoneLongitudeShortcuts[degree][tzname])
+
     def _point_inside_polygon(self, x, y, poly):
         n = len(poly)
         inside =False
-    
+
         p1x, p1y = poly[0]['lng'], poly[0]['lat']
         for i in range(n+1):
             p2x,p2y = poly[i % n]['lng'], poly[i % n]['lat']
@@ -129,9 +111,9 @@ class tzwhere(object):
                         if p1x == p2x or x <= xinters:
                             inside = not inside
             p1x,p1y = p2x,p2y
-    
+
         return inside
-                
+
     def tzNameAt(self, latitude, longitude):
         latTzOptions = self.timezoneLatitudeShortcuts[math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) * self.SHORTCUT_DEGREES_LATITUDE]
         latSet = set(latTzOptions.keys());
@@ -150,8 +132,27 @@ class tzwhere(object):
                             return tzname
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='''
+    Convert lat/lng to timezones. Specify --read_pickle to initialize from a pickle file instead of the json file.
+''')
+    parser.add_argument('--json_file', default='tz_world_compact.json',
+                    help='path to the json input file')
+    parser.add_argument('--pickle_file', default='tz_world.pickle',
+                    help='path to the pickle input file')
+    parser.add_argument('--read_pickle', action='store_true',
+                    help='read pickle data instead of json')
+    parser.add_argument('--write_pickle', action='store_true',
+                    help='whether to output a pickle file')
+    args = parser.parse_args()
+
+    if args.read_pickle:
+        filename = args.pickle_file
+    else:
+        filename = args.json_file
+
     start = datetime.datetime.now()
-    w=tzwhere()
+    w = tzwhere(filename, args.read_pickle, args.write_pickle)
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end-start
