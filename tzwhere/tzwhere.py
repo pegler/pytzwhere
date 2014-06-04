@@ -69,8 +69,8 @@ class tzwhere(object):
         self.timezoneLatitudeShortcuts = {}
         for tzname in self.timezoneNamesToPolygons:
             for polyIndex, poly in enumerate(self.timezoneNamesToPolygons[tzname]):
-                lats = [x['lat'] for x in poly]
-                lngs = [x['lng'] for x in poly]
+                lats = [x[0] for x in poly]
+                lngs = [x[1] for x in poly]
                 minLng = (math.floor(min(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
                           * self.SHORTCUT_DEGREES_LONGITUDE)
                 maxLng = (math.floor(max(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
@@ -115,9 +115,9 @@ class tzwhere(object):
         n = len(poly)
         inside = False
 
-        p1x, p1y = poly[0]['lng'], poly[0]['lat']
+        p1x, p1y = poly[0][1], poly[0][0]
         for i in range(n + 1):
-            p2x, p2y = poly[i % n]['lng'], poly[i % n]['lat']
+            p2x, p2y = poly[i % n][0], poly[i % n][1]
             if y > min(p1y, p2y):
                 if y <= max(p1y, p2y):
                     if x <= max(p1x, p2x):
@@ -228,7 +228,7 @@ class tzwhere(object):
         while raw_poly:
             lat = raw_poly.pop()
             lng = raw_poly.pop()
-            poly.append({'lat': lat, 'lng': lng})
+            poly.append((lat, lng))
         return poly
 
 
