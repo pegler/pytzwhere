@@ -39,26 +39,12 @@ class tzwhere(object):
     def _construct_polygon_map(self, featureCollection):
 
         self.timezoneNamesToPolygons = {}
-        for feature in featureCollection['features']:
-
-            tzname = feature['properties']['TZID']
-            if feature['geometry']['type'] == 'Polygon':
-                polys = feature['geometry']['coordinates']
-                if polys and not (tzname in self.timezoneNamesToPolygons):
-                    self.timezoneNamesToPolygons[tzname] = []
-
-                for raw_poly in polys:
-                    # WPS84 coordinates are [long, lat], while many
-                    # conventions are [lat, long] Our data is in
-                    # WPS84.  Convert to an explicit format which
-                    # geolib likes.
-                    assert len(raw_poly) % 2 == 0
-                    poly = []
-                    while raw_poly:
-                        lat = raw_poly.pop()
-                        lng = raw_poly.pop()
-                        poly.append({'lat': lat, 'lng': lng})
-                    self.timezoneNamesToPolygons[tzname].append(tuple(poly))
+        for (tzname, raw_poly) in tzwhere._feature_collection_polygons(
+                featureCollection):
+            if tzname not in self.timezoneNamesToPolygons:
+                self.timezoneNamesToPolygons[tzname] = []
+            self.timezoneNamesToPolygons[tzname].append(
+                tuple(tzwhere._raw_poly_to_poly(raw_poly)))
 
         # Convert things to tuples to save memory
         for tzname in self.timezoneNamesToPolygons.keys():
@@ -182,6 +168,37 @@ class tzwhere(object):
         print 'Writing pickle output file: %s' % path
         with open(path, 'w') as f:
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def _feature_collection_polygons(featureCollection):
+        """Turn a feature collection into an iterator over polygons.
+
+        Given a featureCollection of the kind loaded from the json
+        input, unpack it to an iterator which produces a series of
+        (tzname, polygon) pairs, one for every polygon in the
+        featureCollection.  Here tzname is a string and polygon is a
+        list of floats.
+
+        """
+        for feature in featureCollection['features']:
+            tzname = feature['properties']['TZID']
+            if feature['geometry']['type'] == 'Polygon':
+                polys = feature['geometry']['coordinates']
+                for poly in polys:
+                    yield (tzname, poly)
+
+    @staticmethod
+    def _raw_poly_to_poly(raw_poly):
+        # WPS84 coordinates are [long, lat], while many conventions
+        # are [lat, long]. Our data is in WPS84. Convert to an
+        # explicit format which geolib likes.
+        assert len(raw_poly) % 2 == 0
+        poly = []
+        while raw_poly:
+            lat = raw_poly.pop()
+            lng = raw_poly.pop()
+            poly.append({'lat': lat, 'lng': lng})
+        return poly
 
 
 HELP = """tzwhere.py - time zone computation from latitude/longitude.
