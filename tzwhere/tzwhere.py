@@ -1,4 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+"""tzwhere.py - time zone computation from latitude/longitude.
+
+Ordinarily this is loaded as a module and instances of the tzwhere
+class are instantiated and queried directly, but the module can be run
+as a script too, in which case it operates as follows:
+
+Usage:
+  tzwhere.py [options]
+
+Options:
+  --json_file=<file>    Path to the json input file [default: tz_world_compact.json].
+  --pickle_file=<file>  Path to the pickle input file [default: tz_world.pickle].
+  --read_pickle         Read pickle data instead of json [default: False].
+  --write_pickle        Whether to output a pickle file [default: False].
+  -h, --help            Show this help.
+
+"""
 
 try:
     import json
@@ -151,30 +169,18 @@ class tzwhere(object):
                         if self._point_inside_polygon(longitude, latitude, poly):
                             return tzname
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='''
-    Convert lat/lng to timezones.
-    Specify --read_pickle to initialize from a pickle file instead of
-    the json file.
-''')
-    parser.add_argument('--json_file', default='tz_world_compact.json',
-                    help='path to the json input file')
-    parser.add_argument('--pickle_file', default='tz_world.pickle',
-                    help='path to the pickle input file')
-    parser.add_argument('--read_pickle', action='store_true',
-                    help='read pickle data instead of json')
-    parser.add_argument('--write_pickle', action='store_true',
-                    help='whether to output a pickle file')
-    args = parser.parse_args()
 
-    if args.read_pickle:
-        filename = args.pickle_file
+def main():
+    import docopt
+
+    args = docopt.docopt(__doc__)
+    if args['--read_pickle']:
+        filename = args['--pickle_file']
     else:
-        filename = args.json_file
+        filename = args['--json_file']
 
     start = datetime.datetime.now()
-    w = tzwhere(filename, args.read_pickle, args.write_pickle)
+    w = tzwhere(filename, args['--read_pickle'], args['--write_pickle'])
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end - start
@@ -183,3 +189,7 @@ if __name__ == "__main__":
     print w.tzNameAt(float(61.17), float(-150.02))  # Anchorage, AK
     print w.tzNameAt(float(44.12), float(-123.22))  # Eugene, OR
     print w.tzNameAt(float(42.652647), float(-73.756371))  # Albany, NY
+
+
+if __name__ == "__main__":
+    main()
