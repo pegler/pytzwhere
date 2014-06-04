@@ -7,13 +7,21 @@ class are instantiated and queried directly, but the module can be run
 as a script too, in which case it operates as follows:
 
 Usage:
-  tzwhere.py [options]
+  tzwhere.py [options] test
+  tzwhere.py [options] write-pickle [<write_pickle_path>]
+
+Modes:
+
+  test - try out a few test locations
+
+  write-pickle - write out a pickle file; the output pickle file path
+      can be specified but is optional, and defaults to the same
+      default value as the --pickle_file option.
 
 Options:
   --json_file=<file>    Path to the json input file [default: tz_world_compact.json].
   --pickle_file=<file>  Path to the pickle input file [default: tz_world.pickle].
   --read_pickle         Read pickle data instead of json [default: False].
-  --write_pickle        Whether to output a pickle file [default: False].
   -h, --help            Show this help.
 
 """
@@ -38,34 +46,12 @@ class tzwhere(object):
     DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
         'tz_world.pickle')
 
-    def __init__(self, filename=None, read_pickle=False,
-                 write_pickle_path=None):
+    def __init__(self, filename=None, read_pickle=False):
 
-        reader = self._read_json if not read_pickle else self._read_pickle
-        featureCollection = reader(filename)
-
-        if write_pickle_path is not None:
-            self._write_pickle(write_pickle_path, featureCollection)
+        featureCollection = tzwhere.read_tzworld(filename, read_pickle)
 
         self._construct_polygon_map(featureCollection)
         self._construct_shortcuts()
-
-    def _read_json(self, path=DEFAULT_JSON):
-        print('Reading json input file: %s' % path)
-        with open(path, 'r') as f:
-            featureCollection = json.load(f)
-        return featureCollection
-
-    def _read_pickle(self, path=DEFAULT_PICKLE):
-        print('Reading pickle input file: %s' % path)
-        with open(path, 'r') as f:
-            featureCollection = pickle.load(f)
-        return featureCollection
-
-    def _write_pickle(self, path, featureCollection):
-        print 'Writing pickle output file: %s' % path
-        with open(path, 'w') as f:
-            pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
     def _construct_polygon_map(self, featureCollection):
 
@@ -185,6 +171,31 @@ class tzwhere(object):
                         if self._point_inside_polygon(longitude, latitude, poly):
                             return tzname
 
+    @staticmethod
+    def read_tzworld(filename=None, read_pickle=False):
+        reader = tzwhere.read_json if not read_pickle else tzwhere.read_pickle
+        return reader(filename)
+
+    @staticmethod
+    def read_json(path=DEFAULT_JSON):
+        print('Reading json input file: %s' % path)
+        with open(path, 'r') as f:
+            featureCollection = json.load(f)
+        return featureCollection
+
+    @staticmethod
+    def read_pickle(path=DEFAULT_PICKLE):
+        print('Reading pickle input file: %s' % path)
+        with open(path, 'r') as f:
+            featureCollection = pickle.load(f)
+        return featureCollection
+
+    @staticmethod
+    def write_pickle(featureCollection, path=DEFAULT_PICKLE):
+        print 'Writing pickle output file: %s' % path
+        with open(path, 'w') as f:
+            pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
+
 
 def main():
     try:
@@ -195,26 +206,43 @@ def main():
         sys.exit(1)
 
     args = docopt.docopt(__doc__)
+
     if args['--read_pickle']:
         filename = args['--pickle_file']
     else:
         filename = args['--json_file']
 
-    if args['--write_pickle']:
-        write_pickle_path = args['--pickle_file']
-    else:
-        write_pickle_path = None
+    if args['test']:
+        test(filename, args['--read_pickle'])
+    elif args['write-pickle']:
+        if args['<write_pickle_path>'] is None:
+            args['<write_pickle_path>'] = tzwhere.DEFAULT_PICKLE
+        write_pickle(filename, args['--read_pickle'],
+                     args['<write_pickle_path>'])
 
+
+def test(filename=None, read_pickle=False):
     start = datetime.datetime.now()
-    w = tzwhere(filename, args['--read_pickle'], write_pickle_path)
+    w = tzwhere(filename, read_pickle)  # XXX None
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end - start
-    print w.tzNameAt(float(35.295953), float(-89.662186))  # Arlington, TN
-    print w.tzNameAt(float(33.58), float(-85.85))  # Memphis, TN
-    print w.tzNameAt(float(61.17), float(-150.02))  # Anchorage, AK
-    print w.tzNameAt(float(44.12), float(-123.22))  # Eugene, OR
-    print w.tzNameAt(float(42.652647), float(-73.756371))  # Albany, NY
+    for (lat, lon, loc, expected) in (
+        (35.295953, -89.662186, 'Arlington, TN', 'America/Chicago'),
+        (33.58,     -85.85,     'Memphis, TN',   'America/Chicago'),
+        (61.17,     -150.02,    'Anchorage, AK', 'America/Anchorage'),
+        (44.12,     -123.22,    'Eugene, OR',    'America/Los_Angeles'),
+        (42.652647, -73.756371, 'Albany, NY',    'America/New_York'),
+    ):
+        actual = w.tzNameAt(float(lat), float(lon))
+        ok = 'OK' if actual == expected else 'XX'
+        print('{0} | {1:20s} | {2:20s} | {3:20s}'.format(
+            ok, loc, actual, expected))
+
+
+def write_pickle(filename, read_pickle, write_pickle_path):
+    tzwhere.write_pickle(tzwhere.read_tzworld(filename, read_pickle),
+                         write_pickle_path)
 
 
 if __name__ == "__main__":
