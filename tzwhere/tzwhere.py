@@ -29,33 +29,45 @@ import pickle
 
 
 class tzwhere(object):
+
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
     # By default, use the data file in our package directory
-    DEFAULT_FILENAME = os.path.join(os.path.dirname(__file__),
+    DEFAULT_JSON = os.path.join(os.path.dirname(__file__),
         'tz_world_compact.json')
-    PICKLE_FILENAME = os.path.join(os.path.dirname(__file__),
+    DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
         'tz_world.pickle')
 
-    def __init__(self, filename=DEFAULT_FILENAME, read_pickle=False,
-            write_pickle=False):
+    def __init__(self, filename=None, read_pickle=False,
+                 write_pickle_path=None):
 
-        input_file = open(filename, 'r')
+        reader = self._read_json if not read_pickle else self._read_pickle
+        featureCollection = reader(filename)
 
-        if read_pickle:
-            print 'Reading pickle input file: %s' % filename
-            featureCollection = pickle.load(input_file)
-        else:
-            print 'Reading json input file: %s' % filename
-            featureCollection = json.load(input_file)
+        if write_pickle_path is not None:
+            self._write_pickle(write_pickle_path, featureCollection)
 
-        input_file.close()
+        self._construct_polygon_map(featureCollection)
+        self._construct_shortcuts()
 
-        if write_pickle:
-            print 'Writing pickle output file: %s' % self.PICKLE_FILENAME
-            f = open(self.PICKLE_FILENAME, 'w')
+    def _read_json(self, path=DEFAULT_JSON):
+        print('Reading json input file: %s' % path)
+        with open(path, 'r') as f:
+            featureCollection = json.load(f)
+        return featureCollection
+
+    def _read_pickle(self, path=DEFAULT_PICKLE):
+        print('Reading pickle input file: %s' % path)
+        with open(path, 'r') as f:
+            featureCollection = pickle.load(f)
+        return featureCollection
+
+    def _write_pickle(self, path, featureCollection):
+        print 'Writing pickle output file: %s' % path
+        with open(path, 'w') as f:
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
-            f.close()
+
+    def _construct_polygon_map(self, featureCollection):
 
         self.timezoneNamesToPolygons = {}
         for feature in featureCollection['features']:
@@ -78,6 +90,13 @@ class tzwhere(object):
                         lng = raw_poly.pop()
                         poly.append({'lat': lat, 'lng': lng})
                     self.timezoneNamesToPolygons[tzname].append(tuple(poly))
+
+        # Convert things to tuples to save memory
+        for tzname in self.timezoneNamesToPolygons.keys():
+            self.timezoneNamesToPolygons[tzname] = \
+                tuple(self.timezoneNamesToPolygons[tzname])
+
+    def _construct_shortcuts(self):
 
         self.timezoneLongitudeShortcuts = {}
         self.timezoneLatitudeShortcuts = {}
@@ -116,9 +135,6 @@ class tzwhere(object):
                     degree = degree + self.SHORTCUT_DEGREES_LATITUDE
 
         # Convert things to tuples to save memory
-        for tzname in self.timezoneNamesToPolygons.keys():
-            self.timezoneNamesToPolygons[tzname] = \
-                tuple(self.timezoneNamesToPolygons[tzname])
         for degree in self.timezoneLatitudeShortcuts:
             for tzname in self.timezoneLatitudeShortcuts[degree].keys():
                 self.timezoneLatitudeShortcuts[degree][tzname] = \
@@ -171,7 +187,12 @@ class tzwhere(object):
 
 
 def main():
-    import docopt
+    try:
+        import docopt
+    except ImportError:
+        print("Please install the docopt package to use tzwhere.py as a script.")
+        import sys
+        sys.exit(1)
 
     args = docopt.docopt(__doc__)
     if args['--read_pickle']:
@@ -179,8 +200,13 @@ def main():
     else:
         filename = args['--json_file']
 
+    if args['--write_pickle']:
+        write_pickle_path = args['--pickle_file']
+    else:
+        write_pickle_path = None
+
     start = datetime.datetime.now()
-    w = tzwhere(filename, args['--read_pickle'], args['--write_pickle'])
+    w = tzwhere(filename, args['--read_pickle'], write_pickle_path)
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end - start
