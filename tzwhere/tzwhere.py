@@ -40,6 +40,8 @@ class tzwhere(object):
             pgen = tzwhere._feature_collection_polygons(featureCollection)
         elif input_kind == 'csv':
             pgen = tzwhere._read_polygons_from_csv(path)
+        else:
+            raise ValueError(input_kind)
 
         # Turn that into an internal mapping.
         self._construct_polygon_map(pgen)
