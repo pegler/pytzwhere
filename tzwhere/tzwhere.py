@@ -9,11 +9,12 @@ Run it with the -h option to see usage.
 
 """
 
+import csv
+import datetime
 try:
     import json
 except ImportError:
     import simplejson as json
-import datetime
 import math
 import os
 import pickle
@@ -28,6 +29,8 @@ class tzwhere(object):
         'tz_world_compact.json')
     DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
         'tz_world.pickle')
+    DEFAULT_CSV = os.path.join(os.path.dirname(__file__),
+        'tz_world.csv')
 
     def __init__(self, input_kind='json', path=None):
 
@@ -170,6 +173,15 @@ class tzwhere(object):
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
+    def write_csv(featureCollection, path=DEFAULT_CSV):
+        print 'Writing csv output file: %s' % path
+        with open(path, 'w') as f:
+            writer = csv.writer(f)
+            for (tzname, polygon) in tzwhere._feature_collection_polygons(
+                    featureCollection):
+                writer.writerow([tzname] + polygon)
+
+    @staticmethod
     def _feature_collection_polygons(featureCollection):
         """Turn a feature collection into an iterator over polygons.
 
@@ -206,6 +218,7 @@ HELP = """tzwhere.py - time zone computation from latitude/longitude.
 Usage:
   tzwhere.py [options] test [<input_path>]
   tzwhere.py [options] write_pickle [<input_path>] [<output_path>]
+  tzwhere.py [options] write_csv [<input_path>] [<output_path>]
 
 Modes:
 
@@ -216,9 +229,14 @@ Modes:
          json...: {default_json}
          pickle.: {default_pickle}
 
-  write-pickle - write out a pickle file; <input_path> is as with
-                 test.  <output_path> is also optional, and defaults
-                 to {default_pickle}
+  write_pickle - write out a pickle file of a feature collection;
+                 <input_path> is as with test.  <output_path> is also
+                 optional, and defaults to {default_pickle}
+
+  write_csv - write out a CSV file.  Each line contains the time zone
+              name and a list of floats for a single polygon in that
+              time zone.  <input_path> is as with test.  <output_path>
+              is also optional, and defaults to {default_csv}.
 
 Options:
   -k <kind>, --kind=<kind>  Input kind.
@@ -228,6 +246,7 @@ Options:
 """.format(**{
     'default_json': tzwhere.DEFAULT_JSON,
     'default_pickle': tzwhere.DEFAULT_PICKLE,
+    'default_csv': tzwhere.DEFAULT_CSV,
 })
 
 
@@ -248,6 +267,11 @@ def main():
             args['<output_path>'] = tzwhere.DEFAULT_PICKLE
         write_pickle(args['--kind'], args['<input_path>'],
                      args['<output_path>'])
+    elif args['write_csv']:
+        if args['<output_path>'] is None:
+            args['<output_path>'] = tzwhere.DEFAULT_CSV
+        write_csv(args['--kind'], args['<input_path>'],
+                  args['<output_path>'])
 
 
 def test(input_kind, path):
@@ -272,6 +296,11 @@ def test(input_kind, path):
 def write_pickle(input_kind, input_path, output_path):
     tzwhere.write_pickle(tzwhere.read_tzworld(input_kind, input_path),
                          output_path)
+
+
+def write_csv(input_kind, input_path, output_path):
+    tzwhere.write_csv(tzwhere.read_tzworld(input_kind, input_path),
+                      output_path)
 
 
 if __name__ == "__main__":
