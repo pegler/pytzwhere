@@ -263,6 +263,8 @@ Modes:
 Options:
   -k <kind>, --kind=<kind>  Input kind.
                             Should be json or pickle [default: json].
+  -m, --memory              Report on memory usage before, during, and
+                            after operation.
   -h, --help                Show this help.
 
 """.format(**{
@@ -282,6 +284,9 @@ def main():
 
     args = docopt.docopt(HELP)
 
+    global report_memory
+    report_memory = args['--memory']
+
     if args['test']:
         test(args['--kind'], args['<input_path>'])
     elif args['write_pickle']:
@@ -297,11 +302,13 @@ def main():
 
 
 def test(input_kind, path):
+    memuse()
     start = datetime.datetime.now()
     w = tzwhere(input_kind, path)
     end = datetime.datetime.now()
     print 'Initialized in: ',
     print end - start
+    memuse()
     for (lat, lon, loc, expected) in (
         (35.295953, -89.662186, 'Arlington, TN', 'America/Chicago'),
         (33.58,     -85.85,     'Memphis, TN',   'America/Chicago'),
@@ -313,17 +320,42 @@ def test(input_kind, path):
         ok = 'OK' if actual == expected else 'XX'
         print('{0} | {1:20s} | {2:20s} | {3:20s}'.format(
             ok, loc, actual, expected))
+    memuse()
 
 
 def write_pickle(input_kind, input_path, output_path):
-    tzwhere.write_pickle(tzwhere.read_tzworld(input_kind, input_path),
-                         output_path)
+    memuse()
+    features = tzwhere.read_tzworld(input_kind, input_path)
+    memuse()
+    tzwhere.write_pickle(features, output_path)
+    memuse()
 
 
 def write_csv(input_kind, input_path, output_path):
-    tzwhere.write_csv(tzwhere.read_tzworld(input_kind, input_path),
-                      output_path)
+    memuse()
+    features = tzwhere.read_tzworld(input_kind, input_path)
+    memuse()
+    tzwhere.write_csv(features, output_path)
+    memuse()
 
+
+def memuse():
+    global report_memory
+    if not report_memory:
+        return
+
+    import subprocess
+    import resource
+
+    free = int(subprocess.check_output(['free', '-m']
+                                   ).split('\n')[2].split()[-1])
+    maxrss = resource.getrusage(
+        resource.RUSAGE_SELF).ru_maxrss / 1000
+    print
+    print 'Memory:'
+    print '{0:6d} MB free'.format(free)
+    print '{0:6d} MB maxrss'.format(maxrss)
+    print
 
 if __name__ == "__main__":
     main()
