@@ -19,6 +19,13 @@ import math
 import os
 import pickle
 
+# We can save about 222MB of RAM by turning our polygon lists into
+# numpy arrays rather than tuples, if numpy is installed.
+try:
+    import numpy
+    WRAP = numpy.array
+except ImportError:
+    WRAP = tuple
 
 class tzwhere(object):
 
@@ -56,12 +63,13 @@ class tzwhere(object):
             if tzname not in self.timezoneNamesToPolygons:
                 self.timezoneNamesToPolygons[tzname] = []
             self.timezoneNamesToPolygons[tzname].append(
-                tuple(tzwhere._raw_poly_to_poly(raw_poly)))
+                WRAP(tzwhere._raw_poly_to_poly(raw_poly)))
 
-        # Convert things to tuples to save memory
+        # Convert polygon lists to numpy arrays or (failing that)
+        # tuples to save memory.
         for tzname in self.timezoneNamesToPolygons.keys():
             self.timezoneNamesToPolygons[tzname] = \
-                tuple(self.timezoneNamesToPolygons[tzname])
+                WRAP(self.timezoneNamesToPolygons[tzname])
 
     def _construct_shortcuts(self):
 
