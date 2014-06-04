@@ -34,16 +34,23 @@ class tzwhere(object):
 
     def __init__(self, input_kind='json', path=None):
 
-        featureCollection = tzwhere.read_tzworld(input_kind, path)
+        # Construct appropriate generator for (tz, polygon) pairs.
+        if input_kind in ['json', 'pickle']:
+            featureCollection = tzwhere.read_tzworld(input_kind, path)
+            pgen = tzwhere._feature_collection_polygons(featureCollection)
+        elif input_kind == 'csv':
+            pgen = tzwhere._read_polygons_from_csv(path)
 
-        self._construct_polygon_map(featureCollection)
+        # Turn that into an internal mapping.
+        self._construct_polygon_map(pgen)
+
+        # Construct lookup shortcuts.
         self._construct_shortcuts()
 
-    def _construct_polygon_map(self, featureCollection):
-
+    def _construct_polygon_map(self, polygon_generator):
+        """Turn a (tz, polygon) generator, into our internal mapping."""
         self.timezoneNamesToPolygons = {}
-        for (tzname, raw_poly) in tzwhere._feature_collection_polygons(
-                featureCollection):
+        for (tzname, raw_poly) in polygon_generator:
             if tzname not in self.timezoneNamesToPolygons:
                 self.timezoneNamesToPolygons[tzname] = []
             self.timezoneNamesToPolygons[tzname].append(
@@ -173,6 +180,16 @@ class tzwhere(object):
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
+    def _read_polygons_from_csv(path=None):
+        if path is None:
+            path = tzwhere.DEFAULT_CSV
+        print('Reading from CSV input file: %s' % path)
+        with open(path, 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                yield(row[0], [float(x) for x in row[1:]])
+
+    @staticmethod
     def write_csv(featureCollection, path=DEFAULT_CSV):
         print 'Writing csv output file: %s' % path
         with open(path, 'w') as f:
@@ -228,15 +245,18 @@ Modes:
 
          json...: {default_json}
          pickle.: {default_pickle}
+         csv....: {default_csv}
 
   write_pickle - write out a pickle file of a feature collection;
                  <input_path> is as with test.  <output_path> is also
-                 optional, and defaults to {default_pickle}
+                 optional, and defaults to {default_pickle}.
+                 N.b.: don't do this with -k csv
 
   write_csv - write out a CSV file.  Each line contains the time zone
               name and a list of floats for a single polygon in that
               time zone.  <input_path> is as with test.  <output_path>
               is also optional, and defaults to {default_csv}.
+              N.b.: don't do this with -k csv
 
 Options:
   -k <kind>, --kind=<kind>  Input kind.
