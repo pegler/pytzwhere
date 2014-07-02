@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+from __future__ import print_function
 try:
     import json
 except ImportError:
@@ -23,16 +23,16 @@ class tzwhere(object):
         input_file = open(filename, 'r')
 
         if read_pickle:
-            print 'Reading pickle input file: %s' % filename
+            print_function( u'Reading pickle input file: {0:s}'.format(filename))
             featureCollection = pickle.load(input_file)
         else:
-            print 'Reading json input file: %s' % filename
+            print_function( u'Reading json input file: {0:s}'.format(filename))
             featureCollection = json.load(input_file)
 
         input_file.close()
 
         if write_pickle:
-            print 'Writing pickle output file: %s' % PICKLE_FILENAME
+            print_function( u'Writing pickle output file: {0:s}'.format(PICKLE_FILENAME))
             f = open(PICKLE_FILENAME, 'w')
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
             f.close()
@@ -158,10 +158,10 @@ if __name__ == "__main__":
     start = datetime.datetime.now()
     w = tzwhere(filename, args.read_pickle, args.write_pickle)
     end = datetime.datetime.now()
-    print 'Initialized in: ',
-    print end-start
-    print w.tzNameAt(float(35.295953), float(-89.662186)) #Arlington, TN
-    print w.tzNameAt(float(33.58), float(-85.85)) #Memphis, TN
-    print w.tzNameAt(float(61.17), float(-150.02)) #Anchorage, AK
-    print w.tzNameAt(float(44.12), float(-123.22)) #Eugene, OR
-    print w.tzNameAt(float(42.652647), float(-73.756371)) #Albany, NY
+    print_function('Initialized in: '),
+    print_function(end-start)
+    print_function(w.tzNameAt(float(35.295953), float(-89.662186))) #Arlington, TN
+    print_function(w.tzNameAt(float(33.58), float(-85.85))) #Memphis, TN
+    print_function(w.tzNameAt(float(61.17), float(-150.02))) #Anchorage, AK
+    print_function(w.tzNameAt(float(44.12), float(-123.22))) #Eugene, OR
+    print_function(w.tzNameAt(float(42.652647), float(-73.756371))) #Albany, NY
