@@ -16,24 +16,27 @@ class tzwhere(object):
     # By default, use the data file in our package directory
     DEFAULT_FILENAME = os.path.join(os.path.dirname(__file__),
         'tz_world_compact.json')
-
+    PICKLE_FILENAME = os.path.join(os.path.dirname(__file__),
+        'tz_world.pickle')
+    
     def __init__(self, filename=DEFAULT_FILENAME, read_pickle=False,
             write_pickle=False):
 
-        input_file = open(filename, 'r')
 
         if read_pickle:
             print 'Reading pickle input file: %s' % filename
+            input_file = open(filename, 'rb') # rb is mandatory for windows
             featureCollection = pickle.load(input_file)
         else:
             print 'Reading json input file: %s' % filename
+            input_file = open(filename, 'r')
             featureCollection = json.load(input_file)
 
         input_file.close()
 
         if write_pickle:
-            print 'Writing pickle output file: %s' % PICKLE_FILENAME
-            f = open(PICKLE_FILENAME, 'w')
+            print 'Writing pickle output file: %s' % self.PICKLE_FILENAME
+            f = open(self.PICKLE_FILENAME, 'wb')
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
             f.close()
 
