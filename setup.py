@@ -11,7 +11,8 @@ setup(
     version='1.0',
     packages=['tzwhere'],
     package_data={
-        'tzwhere': ['tz_world.json', 'tz_world_compact.json', 'tz_world.pickle']
+        'tzwhere': ['tz_world.json', 'tz_world_compact.json',
+                    'tz_world.pickle', 'tz_world.csv']
         },
     include_package_data=True,
     license='MIT License',
