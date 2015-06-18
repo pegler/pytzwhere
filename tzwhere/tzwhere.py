@@ -34,11 +34,11 @@ class tzwhere(object):
     SHORTCUT_DEGREES_LONGITUDE = 1
     # By default, use the data file in our package directory
     DEFAULT_JSON = os.path.join(os.path.dirname(__file__),
-        'tz_world_compact.json')
+                                'tz_world_compact.json')
     DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
-        'tz_world.pickle')
+                                  'tz_world.pickle')
     DEFAULT_CSV = os.path.join(os.path.dirname(__file__),
-        'tz_world.csv')
+                               'tz_world.csv')
 
     def __init__(self, input_kind='json', path=None):
 
@@ -186,7 +186,7 @@ class tzwhere(object):
 
     @staticmethod
     def write_pickle(featureCollection, path=DEFAULT_PICKLE):
-        print 'Writing pickle output file: %s' % path
+        print('Writing pickle output file: %s' % path)
         with open(path, 'wb') as f:
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
@@ -195,14 +195,14 @@ class tzwhere(object):
         if path is None:
             path = tzwhere.DEFAULT_CSV
         print('Reading from CSV input file: %s' % path)
-        with open(path, 'rb') as f:
-            reader = csv.reader(f)
-            for row in reader:
+        with open(path, 'r') as f:
+            for row in f:
+                row = row.split(',')
                 yield(row[0], [float(x) for x in row[1:]])
 
     @staticmethod
     def write_csv(featureCollection, path=DEFAULT_CSV):
-        print 'Writing csv output file: %s' % path
+        print('Writing csv output file: %s' % path)
         with open(path, 'w') as f:
             writer = csv.writer(f)
             for (tzname, polygon) in tzwhere._feature_collection_polygons(
@@ -304,7 +304,7 @@ def main():
         test(args['--kind'], args['<input_path>'])
     elif args['write_pickle']:
         if args['--kind'] not in ('json', 'pickle'):
-            print "Can't write pickle output from CSV input"
+            print("Can't write pickle output from CSV input")
             return
         if args['<output_path>'] is None:
             args['<output_path>'] = tzwhere.DEFAULT_PICKLE
@@ -312,7 +312,7 @@ def main():
                      args['<output_path>'])
     elif args['write_csv']:
         if args['--kind'] not in ('json', 'pickle'):
-            print "Can't write CSV output from CSV input"
+            print("Can't write CSV output from CSV input")
             return
         if args['<output_path>'] is None:
             args['<output_path>'] = tzwhere.DEFAULT_CSV
@@ -325,8 +325,8 @@ def test(input_kind, path):
     start = datetime.datetime.now()
     w = tzwhere(input_kind, path)
     end = datetime.datetime.now()
-    print 'Initialized in: ',
-    print end - start
+    print('Initialized in: '),
+    print(end - start)
     memuse()
     template = '{0:20s} | {1:20s} | {2:20s} | {3:2s}'
     print(template.format('LOCATION', 'EXPECTED', 'COMPUTED', '=='))
@@ -368,7 +368,8 @@ def test(input_kind, path):
     for (lat, lon, loc, expected) in TEST_LOCATIONS:
         computed = w.tzNameAt(float(lat), float(lon))
         ok = 'OK' if computed == expected else 'XX'
-        print(template.format(loc, expected, computed, ok))
+        print(template.format(loc, str(expected), str(computed), ok))
+        assert computed == expected
     memuse()
 
 
@@ -396,15 +397,21 @@ def memuse():
     import subprocess
     import resource
 
-    free = int(subprocess.check_output(['free', '-m']
-                                   ).split('\n')[2].split()[-1])
-    maxrss = resource.getrusage(
-        resource.RUSAGE_SELF).ru_maxrss / 1000
-    print
-    print 'Memory:'
-    print '{0:6d} MB free'.format(free)
-    print '{0:6d} MB maxrss'.format(maxrss)
-    print
+    import sys
+    if sys.version_info >= (3, 0):
+        sep = '\\n'
+    else:
+        sep = '\n'
+
+    free = int(str(subprocess.check_output(['free', '-m']
+                                           )).split(sep)[2].split()[-1])
+    maxrss = int(resource.getrusage(
+        resource.RUSAGE_SELF).ru_maxrss / 1000)
+    print()
+    print('Memory:')
+    print('{0:6d} MB free'.format(free))
+    print('{0:6d} MB maxrss'.format(maxrss))
+    print()
 
 if __name__ == "__main__":
     main()
