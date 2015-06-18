@@ -180,7 +180,7 @@ class tzwhere(object):
         if path is None:
             path = tzwhere.DEFAULT_PICKLE
         print('Reading pickle input file: %s' % path)
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             featureCollection = pickle.load(f)
         return featureCollection
 
