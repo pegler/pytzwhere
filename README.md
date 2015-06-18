@@ -1,4 +1,4 @@
-pytzwhere [![Build Status](https://travis-ci.org/pegler/pytzwhere.svg)](https://travis-ci.org/pegler/pytzwhere)
+pytzwhere [![Build Status](https://travis-ci.org/pegler/pytzwhere.svg)](https://travis-ci.org/pegler/pytzwhere)[![Coverage Status](https://coveralls.io/repos/pegler/pytzwhere/badge.svg)](https://coveralls.io/r/pegler/pytzwhere)
 =========
 
 pytzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline
@@ -13,7 +13,7 @@ If used as a library, basic usage is as follows:
     >>> print tz.tzNameAt(35.29, -89.66)
     America/Chicago
 
-By default (and as shown above), the `tzwhere` class (at the heart of this library) initialises itself from a JSON file.  Note that this is very very memory hungry (about 750MB, though the file is much smaller).  You can save a lot of memory (hundred of megabytes) at the cost of another second or so initialisation time, by telling `tzwhere` to read its data in (one line at a time) from a CSV file instead:
+By default (and as shown above), the `tzwhere` class (at the heart of this library) initialises itself from a JSON file.  Note that this is very very memory hungry (about 250MB, though the file is much smaller).  You can save a lot of memory (hundred of megabytes), by telling `tzwhere` to read its data in (one line at a time) from a CSV file instead:
 
     >>> tz = tzwhere.tzwhere(input_kind='csv')
     Reading from CSV input file: tz_world.csv
