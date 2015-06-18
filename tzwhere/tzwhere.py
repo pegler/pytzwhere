@@ -187,7 +187,7 @@ class tzwhere(object):
     @staticmethod
     def write_pickle(featureCollection, path=DEFAULT_PICKLE):
         print 'Writing pickle output file: %s' % path
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
@@ -195,7 +195,7 @@ class tzwhere(object):
         if path is None:
             path = tzwhere.DEFAULT_CSV
         print('Reading from CSV input file: %s' % path)
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             reader = csv.reader(f)
             for row in reader:
                 yield(row[0], [float(x) for x in row[1:]])
