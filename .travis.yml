@@ -7,9 +7,10 @@ python:
   - "nightly"
 # command to install dependencies
 install:
-  - "pip install numpy docopt"
+  - pip install -e
+  - pip install -r tests/requirements.txt
 # command to run tests
 script: 
-  - ./tzwhere/tzwhere.py -k csv test
-  - ./tzwhere/tzwhere.py -k json test
-  - ./tzwhere/tzwhere.py -k pickle test
+  - nosetests --with-coverage --cover-branches --cover-inclusive --cover-package=tzwhere
+after_script:
+  coveralls
