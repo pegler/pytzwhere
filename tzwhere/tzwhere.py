@@ -333,20 +333,10 @@ class tzwhere(object):
 HELP = """tzwhere.py - time zone computation from latitude/longitude.
 
 Usage:
-  tzwhere.py [options] test [<input_path>]
   tzwhere.py [options] write_pickle [<input_path>] [<output_path>]
   tzwhere.py [options] write_csv [<input_path>] [<output_path>]
 
 Modes:
-
-  test - run unit tests on some test locations, where we simply test that
-         the computed timezone for a given location is the one we expect.
-         <input_path> is the path to read in, and defaults to an
-         appropriate value depending on the --kind option as follows:
-
-             json...: {default_json}
-             pickle.: {default_pickle}
-             csv....: {default_csv}
 
   write_pickle - write out a pickle file of a feature collection;
                  <input_path> is as with test.  <output_path> is also
@@ -389,9 +379,7 @@ def main():
     global report_memory
     report_memory = args['--memory']
 
-    if args['test']:
-        test(args['--kind'], args['<input_path>'])
-    elif args['write_pickle']:
+    if args['write_pickle']:
         if args['--kind'] not in ('json', 'pickle'):
             print("Can't write pickle output from CSV input")
             return
@@ -407,59 +395,6 @@ def main():
             args['<output_path>'] = tzwhere.DEFAULT_CSV
         write_csv(args['--kind'], args['<input_path>'],
                   args['<output_path>'])
-
-
-def test(input_kind, path):
-    memuse()
-    start = datetime.datetime.now()
-    w = tzwhere(input_kind, path)
-    end = datetime.datetime.now()
-    print('Initialized in: '),
-    print(end - start)
-    memuse()
-    template = '{0:20s} | {1:20s} | {2:20s} | {3:2s}'
-    print(template.format('LOCATION', 'EXPECTED', 'COMPUTED', '=='))
-    TEST_LOCATIONS = (
-        ( 35.295953,  -89.662186,  'Arlington, TN',        'America/Chicago'),
-        ( 33.58,      -85.85,      'Memphis, TN',          'America/Chicago'),
-        ( 61.17,     -150.02,      'Anchorage, AK',        'America/Anchorage'),
-        ( 44.12,     -123.22,      'Eugene, OR',           'America/Los_Angeles'),
-        ( 42.652647,  -73.756371,  'Albany, NY',           'America/New_York'),
-        ( 55.743749,   37.6207923, 'Moscow',               'Europe/Moscow'),
-        ( 34.104255, -118.4055591, 'Los Angeles',          'America/Los_Angeles'),
-        ( 55.743749,   37.6207923, 'Moscow',               'Europe/Moscow'),
-        ( 39.194991, -106.8294024, 'Aspen, Colorado',      'America/Denver'),
-        ( 50.438114,   30.5179595, 'Kiev',                 'Europe/Kiev'),
-        ( 12.936873,   77.6909136, 'Jogupalya',            'Asia/Kolkata'),
-        ( 38.889144,  -77.0398235, 'Washington DC',        'America/New_York'),
-        ( 59.932490,   30.3164291, 'St Petersburg',        'Europe/Moscow'),
-        ( 50.300624,  127.559166,  'Blagoveshchensk',      'Asia/Yakutsk'),
-        ( 42.439370,  -71.0700416, 'Boston',               'America/New_York'),
-        ( 41.84937,   -87.6611995, 'Chicago',              'America/Chicago'),
-        ( 28.626873,  -81.7584514, 'Orlando',              'America/New_York'),
-        ( 47.610615, -122.3324847, 'Seattle',              'America/Los_Angeles'),
-        ( 51.499990,   -0.1353549, 'London',               'Europe/London'),
-        ( 51.256241,   -0.8186531, 'Church Crookham',      'Europe/London'),
-        ( 51.292215,   -0.8002638, 'Fleet',                'Europe/London'),
-        ( 48.868743,    2.3237586, 'Paris',                'Europe/Paris'),
-        ( 22.158114,  113.5504603, 'Macau',                'Asia/Macau'),
-        ( 56.833123,   60.6097054, 'Russia',               'Asia/Yekaterinburg'),
-        ( 60.887496,   26.6375756, 'Salo',                 'Europe/Helsinki'),
-        ( 52.799992,   -1.8524408, 'Staffordshire',        'Europe/London'),
-        (  5.016666,  115.0666667, 'Muara',                'Asia/Brunei'),
-        (-41.466666,  -72.95,      'Puerto Montt seaport', 'America/Santiago'),
-        ( 34.566666,   33.0333333, 'Akrotiri seaport',     'Asia/Nicosia'),
-        ( 37.466666,  126.6166667, 'Inchon seaport',       'Asia/Seoul'),
-        ( 42.8,       132.8833333, 'Nakhodka seaport',     'Asia/Vladivostok'),
-        ( 50.26,       -5.051,     'Truro',                'Europe/London'),
-        ( 50.26,       -8.051,     'Sea off Cornwall',     None)
-    )
-    for (lat, lon, loc, expected) in TEST_LOCATIONS:
-        computed = w.tzNameAt(float(lat), float(lon))
-        ok = 'OK' if computed == expected else 'XX'
-        print(template.format(loc, str(expected), str(computed), ok))
-        assert computed == expected
-    memuse()
 
 
 def write_pickle(input_kind, input_path, output_path):
