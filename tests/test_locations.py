@@ -50,7 +50,7 @@ class LocationTestCase(unittest.TestCase):
             ( 50.26,       -8.051,     'Sea off Cornwall',     None)
     )
 
-    def _test_tzwhere(self, input_kind, path, locations, shapely=False,
+    def _test_tzwhere(self, input_kind, locations, path, shapely=False,
                       forceTZ=False):
         start = datetime.datetime.now()
         w = tzwhere.tzwhere(input_kind, path, shapely=shapely, forceTZ=forceTZ)
