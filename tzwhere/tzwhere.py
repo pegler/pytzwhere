@@ -64,7 +64,7 @@ class tzwhere(object):
         '''
 
         # Make sure people have an idea why things are not working later down
-        # the line and tell them now
+        # the line and rather tell them now
         if (shapely or forceTZ) and not SHAPELY_IMPORT:
             raise ValueError('You need to have shapley installed for this '
                              'feature, but we can\'t find it')
@@ -180,7 +180,8 @@ class tzwhere(object):
         @longitude: longitude
         @forceTZ: If forceTZ is true and you can't find a valid timezone return
         the closest timezone you can find instead. Only works if the point is
-        reasonable close to a timezone. Consider this a somewhat a 'hack'.
+        reasonable close to a timezone already. Consider this a somewhat of a
+        'hack'. Introduces potential errors, be warned.
 
         '''
 
@@ -218,12 +219,15 @@ class tzwhere(object):
         distances = []
         if forceTZ:
             if possibleTimezones:
-                for tzname in possibleTimezones:
-                    polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
-                    for polyIndex in polyIndices:
-                        poly = self.unprepTimezoneNamesToPolygons[tzname][polyIndex]
-                        d = poly.distance(queryPoint)
-                        distances.append((d, tzname))
+                if len(possibleTimezones) == 1:
+                    return possibleTimezones[0]
+                else:
+                    for tzname in possibleTimezones:
+                        polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
+                        for polyIndex in polyIndices:
+                            poly = self.unprepTimezoneNamesToPolygons[tzname][polyIndex]
+                            d = poly.distance(queryPoint)
+                            distances.append((d, tzname))
             if len(distances) > 0:
                 return sorted(distances, key=lambda x: x[1])[0][1]
 

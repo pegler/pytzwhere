@@ -29,17 +29,17 @@ If you have `shapely` installed, you can use that library to speed up things by 
     >>> print tz.tzNameAt(35.29, -89.66)
     America/Chicago
 
-The polygons used for building the timezones are based on VMAP0. Sometimes points are outside a VMAP0 polygon, but are clearly within a certain timezone (see also this [discussion](https://github.com/mattbornski/tzwhere/issues/8)). As a somewhat 'hacky' workaround you can tell the library to return the closest timezone if it doesn't find a proper timezone. Only works if the point is reasonably close to a valid timezone in the first place. This costs you another 80MB of RAM or so. You need to use shapely for this.
+The polygons used for building the timezones are based on VMAP0. Sometimes points are outside a VMAP0 polygon, but are clearly within a certain timezone (see also this [discussion](https://github.com/mattbornski/tzwhere/issues/8)). As a somewhat 'hacky' workaround you can tell the library to return the closest timezone if it doesn't find a proper timezone. Only works if the point is reasonably close to a valid timezone in the first place. This costs you another 80MB of RAM or so. You need to use `shapely` for this. 
 
     >>> tz = tzwhere.tzwhere(shapely=True, forceTZ=True)
     Reading csv input file: tz_world_compact.csv
-    >>> tz.tzNameAt(40.7271, -73.98)
+    >>> tz.tzNameAt(40.7271, -73.98) # This is on the shore of Lake Michigan
     >>> tz.tzNameAt(40.7271, -73.98, forceTZ=True)
     'America/New_York'
     >>> tz.tzNameAt(50.1536, -5.030)
-    >>> tz.tzNameAt(50.1536, -5.030, forceTZ=True)
+    >>> tz.tzNameAt(50.1536, -5.030, forceTZ=True) # This is slightly off the shore of Cornwall
     >>> 'Europe/London'
-
+    >>> tz.tzNameAt(50.26, -8.051) # Far off the coast of Cornwall
 
 The module can also be run as a script, which offers some other possibilities including producing the CSV file mentioned above.  Instructions and usage information can be seen by running:
 
