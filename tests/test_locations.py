@@ -38,7 +38,7 @@ class LocationTestCase(unittest.TestCase):
             ( 37.466666,  126.6166667, 'Inchon seaport',       'Asia/Seoul'),
             ( 42.8,       132.8833333, 'Nakhodka seaport',     'Asia/Vladivostok'),
             ( 50.26,       -5.051,     'Truro',                'Europe/London'),
-            ( 50.26,       -8.051,     'Sea off Cornwall',     None)
+            ( 50.26,       -9.051,     'Sea off Cornwall',     None)
         )
 
     TEST_LOCATIONS_FORCETZ = (
@@ -46,8 +46,8 @@ class LocationTestCase(unittest.TestCase):
             ( 33.58,      -85.85,      'Memphis, TN',          'America/Chicago'),
             ( 61.17,     -150.02,      'Anchorage, AK',        'America/Anchorage'),
             ( 40.7271,   -73.98,       'Shore Lake Michigan',  'America/New_York'),
-            ( 50.1536,   -5.030,       'Off Cornwall',         'Europe/London'),
-            ( 50.26,       -8.051,     'Sea off Cornwall',     None)
+            ( 50.1536,   -8.051,       'Off Cornwall',         'Europe/London'),
+            ( 50.26,       -9.051,     'Far off Cornwall',     None)
     )
 
     def _test_tzwhere(self, input_kind, locations, path, shapely=False,
