@@ -122,8 +122,9 @@ class tzwhere(object):
     def _construct_shortcuts(self):
         ''' Construct our shortcuts for looking up polygons. Much faster
         than using an r-tree '''
-        self.timezoneLongitudeShortcuts = {}
-        self.timezoneLatitudeShortcuts = {}
+        self.timezoneLongitudeShortcuts = [collections.defaultdict(list) for i in xrange(360)]
+        self.timezoneLatitudeShortcuts = [collections.defaultdict(list) for i in xrange(180)]
+
         for tzname in self.timezoneNamesToPolygons:
             for polyIndex, poly in enumerate(self.timezoneNamesToPolygons[tzname]):
                 if self.shapely:
@@ -142,23 +143,11 @@ class tzwhere(object):
                           * self.SHORTCUT_DEGREES_LATITUDE)
                 degree = minLng
                 while degree <= maxLng:
-                    if degree not in self.timezoneLongitudeShortcuts:
-                        self.timezoneLongitudeShortcuts[degree] = {}
-
-                    if tzname not in self.timezoneLongitudeShortcuts[degree]:
-                        self.timezoneLongitudeShortcuts[degree][tzname] = []
-
                     self.timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + self.SHORTCUT_DEGREES_LONGITUDE
 
                 degree = minLat
                 while degree <= maxLat:
-                    if degree not in self.timezoneLatitudeShortcuts:
-                        self.timezoneLatitudeShortcuts[degree] = {}
-
-                    if tzname not in self.timezoneLatitudeShortcuts[degree]:
-                        self.timezoneLatitudeShortcuts[degree][tzname] = []
-
                     self.timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + self.SHORTCUT_DEGREES_LATITUDE
 
