@@ -221,7 +221,7 @@ class tzwhere(object):
         if forceTZ:
             if possibleTimezones:
                 if len(possibleTimezones) == 1:
-                    return possibleTimezones[0]
+                    return possibleTimezones.pop()
                 else:
                     for tzname in possibleTimezones:
                         polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
