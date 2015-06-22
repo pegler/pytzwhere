@@ -82,4 +82,4 @@ class LocationTestCase(unittest.TestCase):
         self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True,
                            forceTZ=True)
         self._test_tzwhere('csv', self.TEST_LOCATIONS_FORCETZ, path=None,
-                           shapely=True)
+                           shapely=True, forceTZ=True)
