@@ -2,18 +2,10 @@ from tzwhere import tzwhere
 import datetime
 import unittest
 
+
 class LocationTestCase(unittest.TestCase):
-    
-    def _test_tzwhere(self, input_kind, path):
-        start = datetime.datetime.now()
-        w = tzwhere.tzwhere(input_kind, path)
-        end = datetime.datetime.now()
-        print('Initialized in: '),
-        print(end - start)
-        
-        template = '{0:20s} | {1:20s} | {2:20s} | {3:2s}'
-        print(template.format('LOCATION', 'EXPECTED', 'COMPUTED', '=='))
-        TEST_LOCATIONS = (
+
+    TEST_LOCATIONS = (
             ( 35.295953,  -89.662186,  'Arlington, TN',        'America/Chicago'),
             ( 33.58,      -85.85,      'Memphis, TN',          'America/Chicago'),
             ( 61.17,     -150.02,      'Anchorage, AK',        'America/Anchorage'),
@@ -48,18 +40,46 @@ class LocationTestCase(unittest.TestCase):
             ( 50.26,       -5.051,     'Truro',                'Europe/London'),
             ( 50.26,       -8.051,     'Sea off Cornwall',     None)
         )
-        for (lat, lon, loc, expected) in TEST_LOCATIONS:
-            computed = w.tzNameAt(float(lat), float(lon))
+
+    TEST_LOCATIONS_FORCETZ = (
+            ( 35.295953,  -89.662186,  'Arlington, TN',        'America/Chicago'),
+            ( 33.58,      -85.85,      'Memphis, TN',          'America/Chicago'),
+            ( 61.17,     -150.02,      'Anchorage, AK',        'America/Anchorage'),
+            ( 40.7271,   -73.98,       'Shore Lake Michigan',  'America/New_York'),
+            ( 50.1536,   -5.030,       'Off Cornwall',         'Europe/London'),
+            ( 50.26,       -8.051,     'Sea off Cornwall',     None)
+    )
+
+    def _test_tzwhere(self, input_kind, path, locations, shapely=False,
+                      forceTZ=False):
+        start = datetime.datetime.now()
+        w = tzwhere.tzwhere(input_kind, path, shapely=shapely, forceTZ=forceTZ)
+        end = datetime.datetime.now()
+        print('Initialized in: '),
+        print(end - start)
+
+        template = '{0:20s} | {1:20s} | {2:20s} | {3:2s}'
+        print(template.format('LOCATION', 'EXPECTED', 'COMPUTED', '=='))
+        for (lat, lon, loc, expected) in locations:
+            computed = w.tzNameAt(float(lat), float(lon), forceTZ=forceTZ)
             ok = 'OK' if computed == expected else 'XX'
             print(template.format(loc, str(expected), str(computed), ok))
             assert computed == expected
-        
 
     def test_csv(self):
-        self._test_tzwhere('csv', path=None)
-        
+        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None)
+
     def test_json(self):
-        self._test_tzwhere('json', path=None)
-    
+        self._test_tzwhere('json', self.TEST_LOCATIONS, path=None)
+
     def test_pickle(self):
-        self._test_tzwhere('pickle', path=None)
+        self._test_tzwhere('pickle', self.TEST_LOCATIONS, path=None)
+
+    def test_shapely(self):
+        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True)
+
+    def test_forceTZ(self):
+        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True,
+                           forceTZ=True)
+        self._test_tzwhere('csv', self.TEST_LOCATIONS_FORCETZ, path=None,
+                           shapely=True)
