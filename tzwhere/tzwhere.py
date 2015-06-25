@@ -11,7 +11,6 @@ Run it with the -h option to see usage.
 
 import csv
 import collections
-import datetime
 try:
     import json
 except ImportError:
@@ -49,7 +48,7 @@ class tzwhere(object):
     DEFAULT_CSV = os.path.join(os.path.dirname(__file__),
                                'tz_world.csv')
 
-    def __init__(self, input_kind='json', path=None,
+    def __init__(self, input_kind='csv', path=None,
                  shapely=False, forceTZ=False):
         '''
         Initializes the tzwhere class.
