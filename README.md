@@ -7,7 +7,7 @@ It is a port from https://github.com/mattbornski/tzwhere with a few improvements
 
 If used as a library, basic usage is as follows:
 
-    >>> import tzwhere
+    >>> from tzwhere import tzwhere
     >>> tz = tzwhere.tzwhere()
     Reading json input file: tz_world_compact.json
     >>> print tz.tzNameAt(35.29, -89.66)
