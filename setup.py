@@ -19,7 +19,6 @@ setup(
     description='Python library to look up timezone from lat / long offline',
     long_description=README,
     url='https://github.com/pegler/pytzwhere',
-    download_url='https://github.com/pegler/pytzwhere/tarball/1.0',
     author='Matt Pegler',
     classifiers=[
         'Intended Audience :: Developers',
