@@ -20,6 +20,7 @@ setup(
     long_description=README,
     url='https://github.com/pegler/pytzwhere',
     author='Matt Pegler',
+    author_email='matt@pegler.co',
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
