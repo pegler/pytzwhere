@@ -18,6 +18,7 @@ except ImportError:
 import math
 import os
 import pickle
+import logging
 
 # We can speed up things by about 200 times if we use shapely
 try:
@@ -35,6 +36,10 @@ try:
 except ImportError:
     WRAP = tuple
 
+LOGGER_FORMAT = '%(asctime)-15s %(filename)s %(funcName)s %(lineno)d %(levelname)s  %(message)s'
+logging.basicConfig(format=LOGGER_FORMAT, level=logging.DEBUG)
+LOGGER = logging.getLogger('pytzwhere')
+logging.info('Application started..')
 
 class tzwhere(object):
 
@@ -259,7 +264,7 @@ class tzwhere(object):
     def read_json(path=None):
         if path is None:
             path = tzwhere.DEFAULT_JSON
-        print('Reading json input file: %s' % path)
+        logging.info('Reading json input file: %s\n' % path)
         with open(path, 'r') as f:
             featureCollection = json.load(f)
         return featureCollection
@@ -268,14 +273,14 @@ class tzwhere(object):
     def read_pickle(path=None):
         if path is None:
             path = tzwhere.DEFAULT_PICKLE
-        print('Reading pickle input file: %s' % path)
+        logging.info('Reading pickle input file: %s\n' % path)
         with open(path, 'rb') as f:
             featureCollection = pickle.load(f)
         return featureCollection
 
     @staticmethod
     def write_pickle(featureCollection, path=DEFAULT_PICKLE):
-        print('Writing pickle output file: %s' % path)
+        logging.info('Writing pickle output file: %s\n' % path)
         with open(path, 'wb') as f:
             pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
 
@@ -283,7 +288,7 @@ class tzwhere(object):
     def _read_polygons_from_csv(path=None):
         if path is None:
             path = tzwhere.DEFAULT_CSV
-        print('Reading from CSV input file: %s' % path)
+        logging.info('Reading from CSV input file: %s\n' % path)
         with open(path, 'r') as f:
             for row in f:
                 row = row.split(',')
@@ -291,7 +296,7 @@ class tzwhere(object):
 
     @staticmethod
     def write_csv(featureCollection, path=DEFAULT_CSV):
-        print('Writing csv output file: %s' % path)
+        logging.info('Writing csv output file: %s\n' % path)
         with open(path, 'w') as f:
             writer = csv.writer(f)
             for (tzname, polygon) in tzwhere._feature_collection_polygons(
