@@ -6,6 +6,8 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+# create shapely pickle if shapely is installed
+
 setup(
     name='tzwhere',
     version='2.0',
@@ -27,6 +29,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
+	'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Localization',
     ],
 )
