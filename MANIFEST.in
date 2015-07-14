@@ -1,5 +1,3 @@
 include LICENSE
 include README.md
-include tzwhere/tz_world.json
-include tzwhere/tz_world_compact.json
-include tzwhere/tz_world.pickle
+include tzwhere/tz_world.csv
