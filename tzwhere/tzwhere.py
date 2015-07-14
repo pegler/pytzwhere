@@ -41,13 +41,14 @@ logging.basicConfig(format=LOGGER_FORMAT, level=logging.DEBUG)
 LOGGER = logging.getLogger('pytzwhere')
 logging.info('Application started..')
 
+
 class tzwhere(object):
 
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
     # By default, use the data file in our package directory
     DEFAULT_JSON = os.path.join(os.path.dirname(__file__),
-                                'tz_world_compact.json')
+                                'tz_world.json')
     DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
                                   'tz_world.pickle')
     DEFAULT_CSV = os.path.join(os.path.dirname(__file__),
@@ -64,11 +65,8 @@ class tzwhere(object):
         @forceTZ: If you want to force the lookup method to a return a
         timezone even if the point you are looking up is slightly outside it's
         bounds, you need to specify this during initialization arleady
-
         '''
 
-        # Make sure people have an idea why things are not working later down
-        # the line and rather tell them now
         if (shapely or forceTZ) and not SHAPELY_IMPORT:
             raise ValueError('You need to have shapley installed for this '
                              'feature, but we can\'t find it')
@@ -80,7 +78,7 @@ class tzwhere(object):
         self.shapely = shapely and SHAPELY_IMPORT
 
         # Construct appropriate generator for (tz, polygon) pairs.
-        if input_kind in ['json', 'pickle']:
+        if input_kind in ['pickle', 'json']:
             featureCollection = tzwhere.read_tzworld(input_kind, path)
             pgen = tzwhere._feature_collection_polygons(featureCollection)
         elif input_kind == 'csv':
@@ -108,8 +106,8 @@ class tzwhere(object):
         self.timezoneNamesToPolygons = collections.defaultdict(list)
         self.unprepTimezoneNamesToPolygons = collections.defaultdict(list)
 
-        for (tzname, raw_poly) in polygon_generator:
-            poly = Polygon(tzwhere._raw_poly_to_poly(raw_poly))
+        for (tzname, poly) in polygon_generator:
+            poly = Polygon(poly)
             self.timezoneNamesToPolygons[tzname].append(
                 prep(poly))
             if forceTZ:
@@ -119,9 +117,9 @@ class tzwhere(object):
     def _construct_polygon_map(self, polygon_generator):
         """Turn a (tz, polygon) generator, into our internal mapping."""
         self.timezoneNamesToPolygons = collections.defaultdict(list)
-        for (tzname, raw_poly) in polygon_generator:
+        for (tzname, poly) in polygon_generator:
             self.timezoneNamesToPolygons[tzname].append(
-                WRAP(tzwhere._raw_poly_to_poly(raw_poly)))
+                WRAP(poly))
 
     def _construct_shortcuts(self):
         ''' Construct our shortcuts for looking up polygons. Much faster
@@ -132,11 +130,11 @@ class tzwhere(object):
         for tzname in self.timezoneNamesToPolygons:
             for polyIndex, poly in enumerate(self.timezoneNamesToPolygons[tzname]):
                 if self.shapely:
-                    lats = [x[0] for x in poly.context.exterior.coords]
-                    lngs = [x[1] for x in poly.context.exterior.coords]
+                    lngs = [x[0] for x in poly.context.exterior.coords]
+                    lats = [x[1] for x in poly.context.exterior.coords]
                 else:
-                    lats = [x[0] for x in poly]
-                    lngs = [x[1] for x in poly]
+                    lngs = [x[0] for x in poly]
+                    lats = [x[1] for x in poly]
                 minLng = (math.floor(min(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
                           * self.SHORTCUT_DEGREES_LONGITUDE)
                 maxLng = (math.floor(max(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
@@ -208,7 +206,7 @@ class tzwhere(object):
         possibleTimezones = lngSet.intersection(latSet)
 
         if self.shapely:
-            queryPoint = Point(latitude, longitude)
+            queryPoint = Point(longitude, latitude)
 
         if possibleTimezones:
             for tzname in possibleTimezones:
@@ -219,7 +217,7 @@ class tzwhere(object):
                         if poly.contains_properly(queryPoint):
                             return tzname
                     else:
-                        if self._point_inside_polygon(longitude, latitude, poly):
+                        if self._point_inside_polygon(latitude,longitude, poly):
                             return tzname
         distances = []
         if forceTZ:
@@ -282,7 +280,7 @@ class tzwhere(object):
     def write_pickle(featureCollection, path=DEFAULT_PICKLE):
         logging.info('Writing pickle output file: %s\n' % path)
         with open(path, 'wb') as f:
-            pickle.dump(featureCollection, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(featureCollection, f, protocol=2)
 
     @staticmethod
     def _read_polygons_from_csv(path=None):
@@ -292,7 +290,7 @@ class tzwhere(object):
         with open(path, 'r') as f:
             for row in f:
                 row = row.split(',')
-                yield(row[0], [float(x) for x in row[1:]])
+                yield(row[0], [[float(y) for y in x.split(' ')] for x in row[1:]])
 
     @staticmethod
     def write_csv(featureCollection, path=DEFAULT_CSV):
@@ -301,11 +299,13 @@ class tzwhere(object):
             writer = csv.writer(f)
             for (tzname, polygon) in tzwhere._feature_collection_polygons(
                     featureCollection):
-                writer.writerow([tzname] + polygon)
+                row = [' '.join([str(x), str(y)]) for x, y in polygon]
+                writer.writerow([tzname] + row)
 
     @staticmethod
     def _feature_collection_polygons(featureCollection):
-        """Turn a feature collection into an iterator over polygons.
+        """Turn a feature collection that you get from a pickle
+        into an iterator over polygons.
 
         Given a featureCollection of the kind loaded from the json
         input, unpack it to an iterator which produces a series of
@@ -321,22 +321,6 @@ class tzwhere(object):
                 for poly in polys:
                     yield (tzname, poly)
 
-    @staticmethod
-    def _raw_poly_to_poly(raw_poly):
-        # WPS84 coordinates are [long, lat], while many conventions
-        # are [lat, long]. Our data is in WPS84. Convert to an
-        # explicit format which geolib likes.
-        # assert len(raw_poly) % 2 == 0
-        poly = []
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-
-        while raw_poly:
-            lat, lng = raw_poly.pop()
-            # lng = raw_poly.pop()
-            poly.append((lat, lng))
-        return poly
-
-
 HELP = """tzwhere.py - time zone computation from latitude/longitude.
 
 Usage:
@@ -346,13 +330,13 @@ Usage:
 Modes:
 
   write_pickle - write out a pickle file of a feature collection;
-                 <input_path> is as with test.  <output_path> is also
+                 <input_path> is optional.  <output_path> is also
                  optional, and defaults to {default_pickle}.
                  N.b.: don't do this with -k csv
 
   write_csv - write out a CSV file.  Each line contains the time zone
               name and a list of floats for a single polygon in that
-              time zone.  <input_path> is as with test.  <output_path>
+              time zone.  <input_path> is optional.  <output_path>
               is also optional, and defaults to {default_csv}.
               N.b.: don't do this with -k csv
 

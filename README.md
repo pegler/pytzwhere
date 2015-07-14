@@ -9,9 +9,8 @@ It is a port from https://github.com/mattbornski/tzwhere with a few improvements
 
 If used as a library, basic usage is as follows:
 
-    >>> import tzwhere
+    >>> from tzwhere import tzwhere
     >>> tz = tzwhere.tzwhere()
-    Reading json input file: tz_world_compact.csv
     >>> print tz.tzNameAt(35.29, -89.66)
     America/Chicago
 
@@ -25,7 +24,6 @@ If you have `shapely` installed, you can use that library to speed up things by 
 The polygons used for building the timezones are based on VMAP0. Sometimes points are outside a VMAP0 polygon, but are clearly within a certain timezone (see also this [discussion](https://github.com/mattbornski/tzwhere/issues/8)). As a somewhat 'hacky' workaround you can tell the library to return the closest timezone if it doesn't find a proper timezone. Only works if the point is reasonably close to a valid timezone in the first place. This costs you another 80MB of RAM or so. You need to use `shapely` for this. 
 
     >>> tz = tzwhere.tzwhere(shapely=True, forceTZ=True)
-    Reading csv input file: tz_world_compact.csv
     >>> # This is on the shore of Lake Michigan
     >>> tz.tzNameAt(40.7271, -73.98)
     >>> tz.tzNameAt(40.7271, -73.98, forceTZ=True)
