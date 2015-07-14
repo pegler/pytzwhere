@@ -5,7 +5,7 @@ This is the unstable branch. Use at your own discretion.
 
 pytzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline.
 
-It is a port from https://github.com/mattbornski/tzwhere with a few improvements.
+It is a port from https://github.com/mattbornski/tzwhere with a few improvements. The underlying timezone data is based on work done by [Eric Muller](http://efele.net/maps/tz/world/)
 
 If used as a library, basic usage is as follows:
 

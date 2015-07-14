@@ -321,11 +321,13 @@ class tzwhere(object):
         # WPS84 coordinates are [long, lat], while many conventions
         # are [lat, long]. Our data is in WPS84. Convert to an
         # explicit format which geolib likes.
-        assert len(raw_poly) % 2 == 0
+        # assert len(raw_poly) % 2 == 0
         poly = []
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+
         while raw_poly:
-            lat = raw_poly.pop()
-            lng = raw_poly.pop()
+            lat, lng = raw_poly.pop()
+            # lng = raw_poly.pop()
             poly.append((lat, lng))
         return poly
 
