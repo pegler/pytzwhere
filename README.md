@@ -16,8 +16,7 @@ If used as a library, basic usage is as follows:
 
 If you have `shapely` installed, you can use that library to speed up things by a factor of hundreds. Initialization takes considerably longer (about 20 seconds longer) though. Only really makes sense if you have a lot of points to look up.
     
-    >>> tz = tzwhere.tzwhere(input_kind='csv', shapely=True)
-    Reading from CSV input file: tz_world.csv
+    >>> tz = tzwhere.tzwhere(shapely=True)
     >>> print tz.tzNameAt(35.29, -89.66)
     America/Chicago
 
@@ -35,7 +34,7 @@ The polygons used for building the timezones are based on VMAP0. Sometimes point
     >>> # Far off the coast of Cornwall
     >>> tz.tzNameAt(50.26, -9.051, forceTZ=True)
 
-The module can also be run as a script, which offers some other possibilities including producing the CSV file mentioned above.  Instructions and usage information can be seen by running:
+The module can also be run as a script, which offers some other possibilities including producing various input files. Instructions and usage information can be seen by running:
 
     tzwhere.py --help
 

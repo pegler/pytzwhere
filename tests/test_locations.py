@@ -69,12 +69,6 @@ class LocationTestCase(unittest.TestCase):
     def test_csv(self):
         self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None)
 
-    def test_json(self):
-        self._test_tzwhere('json', self.TEST_LOCATIONS, path=None)
-
-    def test_pickle(self):
-        self._test_tzwhere('pickle', self.TEST_LOCATIONS, path=None)
-
     def test_shapely(self):
         self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True)
 
