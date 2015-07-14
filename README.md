@@ -1,8 +1,6 @@
 pytzwhere [![Build Status](https://travis-ci.org/pegler/pytzwhere.svg)](https://travis-ci.org/pegler/pytzwhere) [![Coverage Status](https://coveralls.io/repos/pegler/pytzwhere/badge.svg)](https://coveralls.io/r/pegler/pytzwhere)
 =========
 
-This is the unstable branch. Use at your own discretion.
-
 pytzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline.
 
 It is a port from https://github.com/mattbornski/tzwhere with a few improvements. The underlying timezone data is based on work done by [Eric Muller](http://efele.net/maps/tz/world/)
