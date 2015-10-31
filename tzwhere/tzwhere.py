@@ -39,7 +39,6 @@ except ImportError:
 LOGGER_FORMAT = '%(asctime)-15s %(filename)s %(funcName)s %(lineno)d %(levelname)s  %(message)s'
 logging.basicConfig(format=LOGGER_FORMAT, level=logging.DEBUG)
 LOGGER = logging.getLogger('pytzwhere')
-logging.info('Application started..')
 
 
 class tzwhere(object):
@@ -365,6 +364,7 @@ def main():
         import sys
         sys.exit(1)
 
+    logging.info('Application started..')
     args = docopt.docopt(HELP)
 
     global report_memory
