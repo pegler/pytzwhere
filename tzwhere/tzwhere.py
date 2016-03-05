@@ -48,10 +48,6 @@ class tzwhere(object):
     # By default, use the data file in our package directory
     DEFAULT_JSON = os.path.join(os.path.dirname(__file__),
                                 'tz_world.json')
-    DEFAULT_PICKLE = os.path.join(os.path.dirname(__file__),
-                                  'tz_world.pickle')
-    DEFAULT_CSV = os.path.join(os.path.dirname(__file__),
-                               'tz_world.csv')
 
     def __init__(self, input_kind='csv', path=None,
                  shapely=False, forceTZ=False):
@@ -77,11 +73,9 @@ class tzwhere(object):
         self.shapely = shapely and SHAPELY_IMPORT
 
         # Construct appropriate generator for (tz, polygon) pairs.
-        if input_kind in ['pickle', 'json']:
+        if input_kind in ['json']:
             featureCollection = tzwhere.read_tzworld(input_kind, path)
             pgen = tzwhere._feature_collection_polygons(featureCollection)
-        elif input_kind == 'csv':
-            pgen = tzwhere._read_polygons_from_csv(path)
         else:
             raise ValueError(input_kind)
 
@@ -267,41 +261,6 @@ class tzwhere(object):
         return featureCollection
 
     @staticmethod
-    def read_pickle(path=None):
-        if path is None:
-            path = tzwhere.DEFAULT_PICKLE
-        logging.info('Reading pickle input file: %s\n' % path)
-        with open(path, 'rb') as f:
-            featureCollection = pickle.load(f)
-        return featureCollection
-
-    @staticmethod
-    def write_pickle(featureCollection, path=DEFAULT_PICKLE):
-        logging.info('Writing pickle output file: %s\n' % path)
-        with open(path, 'wb') as f:
-            pickle.dump(featureCollection, f, protocol=2)
-
-    @staticmethod
-    def _read_polygons_from_csv(path=None):
-        if path is None:
-            path = tzwhere.DEFAULT_CSV
-        logging.info('Reading from CSV input file: %s\n' % path)
-        with open(path, 'r') as f:
-            for row in f:
-                row = row.split(',')
-                yield(row[0], [[float(y) for y in x.split(' ')] for x in row[1:]])
-
-    @staticmethod
-    def write_csv(featureCollection, path=DEFAULT_CSV):
-        logging.info('Writing csv output file: %s\n' % path)
-        with open(path, 'w') as f:
-            writer = csv.writer(f)
-            for (tzname, polygon) in tzwhere._feature_collection_polygons(
-                    featureCollection):
-                row = [' '.join([str(x), str(y)]) for x, y in polygon]
-                writer.writerow([tzname] + row)
-
-    @staticmethod
     def _feature_collection_polygons(featureCollection):
         """Turn a feature collection that you get from a pickle
         into an iterator over polygons.
@@ -320,113 +279,9 @@ class tzwhere(object):
                 for poly in polys:
                     yield (tzname, poly)
 
-HELP = """tzwhere.py - time zone computation from latitude/longitude.
-
-Usage:
-  tzwhere.py [options] write_pickle [<input_path>] [<output_path>]
-  tzwhere.py [options] write_csv [<input_path>] [<output_path>]
-
-Modes:
-
-  write_pickle - write out a pickle file of a feature collection;
-                 <input_path> is optional.  <output_path> is also
-                 optional, and defaults to {default_pickle}.
-                 N.b.: don't do this with -k csv
-
-  write_csv - write out a CSV file.  Each line contains the time zone
-              name and a list of floats for a single polygon in that
-              time zone.  <input_path> is optional.  <output_path>
-              is also optional, and defaults to {default_csv}.
-              N.b.: don't do this with -k csv
-
-Options:
-  -k <kind>, --kind=<kind>  Input kind. Should be json or csv or pickle
-                            [default: json].
-  -m, --memory              Report on memory usage before, during, and
-                            after operation.
-  -h, --help                Show this help.
-
-""".format(**{
-    'default_json': tzwhere.DEFAULT_JSON,
-    'default_pickle': tzwhere.DEFAULT_PICKLE,
-    'default_csv': tzwhere.DEFAULT_CSV
-})
-
-
-report_memory = False
-
 
 def main():
-    try:
-        import docopt
-    except ImportError:
-        print("Please install the docopt package to use tzwhere.py as a script.")
-        import sys
-        sys.exit(1)
-
-    logging.info('Application started..')
-    args = docopt.docopt(HELP)
-
-    global report_memory
-    report_memory = args['--memory']
-
-    if args['write_pickle']:
-        if args['--kind'] not in ('json', 'pickle'):
-            print("Can't write pickle output from CSV input")
-            return
-        if args['<output_path>'] is None:
-            args['<output_path>'] = tzwhere.DEFAULT_PICKLE
-        write_pickle(args['--kind'], args['<input_path>'],
-                     args['<output_path>'])
-    elif args['write_csv']:
-        if args['--kind'] not in ('json', 'pickle'):
-            print("Can't write CSV output from CSV input")
-            return
-        if args['<output_path>'] is None:
-            args['<output_path>'] = tzwhere.DEFAULT_CSV
-        write_csv(args['--kind'], args['<input_path>'],
-                  args['<output_path>'])
-
-
-def write_pickle(input_kind, input_path, output_path):
-    memuse()
-    features = tzwhere.read_tzworld(input_kind, input_path)
-    memuse()
-    tzwhere.write_pickle(features, output_path)
-    memuse()
-
-
-def write_csv(input_kind, input_path, output_path):
-    memuse()
-    features = tzwhere.read_tzworld(input_kind, input_path)
-    memuse()
-    tzwhere.write_csv(features, output_path)
-    memuse()
-
-
-def memuse():
-    global report_memory
-    if not report_memory:
-        return
-
-    import subprocess
-    import resource
-
-    import sys
-    if sys.version_info >= (3, 0):
-        sep = '\\n'
-    else:
-        sep = '\n'
-
-    free = int(str(subprocess.check_output(['free', '-m']
-                                           )).split(sep)[2].split()[-1])
-    maxrss = int(resource.getrusage(
-        resource.RUSAGE_SELF).ru_maxrss / 1000)
-    print()
-    print('Memory:')
-    print('{0:6d} MB free'.format(free))
-    print('{0:6d} MB maxrss'.format(maxrss))
-    print()
+    print('Usage of pytzwhere as a script is no longer supported. Please use version 2.3')
 
 if __name__ == "__main__":
     main()
