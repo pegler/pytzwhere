@@ -19,6 +19,7 @@ except ImportError:
 import math
 import numpy
 import os
+import pickle
 
 
 class tzwhere(object):
@@ -26,10 +27,12 @@ class tzwhere(object):
     SHORTCUT_DEGREES_LATITUDE = 1
     SHORTCUT_DEGREES_LONGITUDE = 1
     # By default, use the data file in our package directory
-    DEFAULT_JSON = os.path.join(os.path.dirname(__file__),
-                                'tz_world.json')
+    DEFAULT_SHORTCUTS = os.path.join(os.path.dirname(__file__),
+                                     'tz_world_shortcuts.pck')
+    DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
+                                    'tz_world_polygons.pck')
 
-    def __init__(self, path=None, shapely=False, forceTZ=False):
+    def __init__(self, path=None, shapely=False, forceTZ=False, gridSize=1):
         '''
         Initializes the tzwhere class.
         @input_kind: Which filetype you want to read from
@@ -40,88 +43,14 @@ class tzwhere(object):
         timezone even if the point you are looking up is slightly outside it's
         bounds, you need to specify this during initialization arleady
         '''
+        with open(tzwhere.DEFAULT_SHORTCUTS, 'rb') as f:
+            self.timezoneLongitudeShortcuts,\
+                self.timezoneLatitudeShortcuts = pickle.load(f)
 
-        self.forceTZ = forceTZ
+        with open(tzwhere.DEFAULT_POLYGONS, 'rb') as f:
+            self.timezoneNamesToPolygons = pickle.load(f)
 
-        # Construct appropriate generator for (tz, polygon) pairs.
-        featureCollection = tzwhere.read_tzworld(path)
-        pgen = tzwhere._feature_collection_polygons(featureCollection)
-
-        # Turn that into an internal mapping
-        self._construct_shapely_map(pgen, forceTZ)
-
-        # Convert polygon lists to numpy arrays
-        for tzname in self.timezoneNamesToPolygons.keys():
-            self.timezoneNamesToPolygons[tzname] = \
-                numpy.asarray(self.timezoneNamesToPolygons[tzname])
-
-        # And construct lookup shortcuts.
-        self._construct_shortcuts()
-
-    def _construct_shapely_map(self, polygon_generator, forceTZ):
-        """Turn a (tz, polygon) generator, into our internal shapely mapping."""
-        self.timezoneNamesToPolygons = collections.defaultdict(list)
-        self.unprepTimezoneNamesToPolygons = collections.defaultdict(list)
-
-        for (tzname, poly) in polygon_generator:
-            self.timezoneNamesToPolygons[tzname].append(
-                poly)
-            if forceTZ:
-                self.unprepTimezoneNamesToPolygons[tzname].append(
-                    poly)
-
-    def _construct_shortcuts(self):
-        ''' Construct our shortcuts for looking up polygons. Much faster
-        than using an r-tree '''
-        self.timezoneLongitudeShortcuts = {}
-        self.timezoneLatitudeShortcuts = {}
-
-        for tzname in self.timezoneNamesToPolygons:
-            for polyIndex, poly in enumerate(self.timezoneNamesToPolygons[tzname]):
-                lngs = [x[0] for x in poly]
-                lats = [x[1] for x in poly]
-                minLng = (math.floor(min(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
-                          * self.SHORTCUT_DEGREES_LONGITUDE)
-                maxLng = (math.floor(max(lngs) / self.SHORTCUT_DEGREES_LONGITUDE)
-                          * self.SHORTCUT_DEGREES_LONGITUDE)
-                minLat = (math.floor(min(lats) / self.SHORTCUT_DEGREES_LATITUDE)
-                          * self.SHORTCUT_DEGREES_LATITUDE)
-                maxLat = (math.floor(max(lats) / self.SHORTCUT_DEGREES_LATITUDE)
-                          * self.SHORTCUT_DEGREES_LATITUDE)
-                degree = minLng
-
-                while degree <= maxLng:
-                    if degree not in self.timezoneLongitudeShortcuts:
-                        self.timezoneLongitudeShortcuts[degree] = {}
-
-                    if tzname not in self.timezoneLongitudeShortcuts[degree]:
-                        self.timezoneLongitudeShortcuts[degree][tzname] = []
-
-                    self.timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
-                    degree = degree + self.SHORTCUT_DEGREES_LONGITUDE
-
-                degree = minLat
-                while degree <= maxLat:
-                    if degree not in self.timezoneLatitudeShortcuts:
-                        self.timezoneLatitudeShortcuts[degree] = {}
-
-                    if tzname not in self.timezoneLatitudeShortcuts[degree]:
-                        self.timezoneLatitudeShortcuts[degree][tzname] = []
-
-                    self.timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
-                    degree = degree + self.SHORTCUT_DEGREES_LATITUDE
-
-        # Convert things to tuples to save memory
-        for degree in self.timezoneLatitudeShortcuts:
-            for tzname in self.timezoneLatitudeShortcuts[degree].keys():
-                self.timezoneLatitudeShortcuts[degree][tzname] = \
-                    tuple(self.timezoneLatitudeShortcuts[degree][tzname])
-        for degree in self.timezoneLongitudeShortcuts.keys():
-            for tzname in self.timezoneLongitudeShortcuts[degree].keys():
-                self.timezoneLongitudeShortcuts[degree][tzname] = \
-                    tuple(self.timezoneLongitudeShortcuts[degree][tzname])
-
-    def tzNameAt(self, latitude, longitude, forceTZ=False):
+    def tzNameAt(self, latitude, longitude):
         '''
         Let's you lookup for a given latitude and longitude the appropriate
         timezone.
@@ -133,19 +62,14 @@ class tzwhere(object):
         'hack'. Introduces potential errors, be warned.
         '''
 
-        if forceTZ and not self.forceTZ:
-            raise ValueError('You need to initialize the class with forceTZ='
-                             'True if you want to use it later on during the'
-                             ' lookup')
-
         latTzOptions = self.timezoneLatitudeShortcuts[
-            (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE)
-             * self.SHORTCUT_DEGREES_LATITUDE)
+            (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) *
+             self.SHORTCUT_DEGREES_LATITUDE)
         ]
         latSet = set(latTzOptions.keys())
         lngTzOptions = self.timezoneLongitudeShortcuts[
-            (math.floor(longitude / self.SHORTCUT_DEGREES_LONGITUDE)
-             * self.SHORTCUT_DEGREES_LONGITUDE)
+            (math.floor(longitude / self.SHORTCUT_DEGREES_LONGITUDE) *
+             self.SHORTCUT_DEGREES_LONGITUDE)
         ]
         lngSet = set(lngTzOptions.keys())
         possibleTimezones = lngSet.intersection(latSet)
@@ -154,38 +78,24 @@ class tzwhere(object):
 
         if possibleTimezones:
             for tzname in possibleTimezones:
-                # TODO this isinstance is not implemented correctly
-                if isinstance(self.timezoneNamesToPolygons[tzname], numpy.ndarray):
-                    self.timezoneNamesToPolygons[tzname] = list(map(lambda p: prep(Polygon(p)), self.timezoneNamesToPolygons[tzname]))
+                if isinstance(self.timezoneNamesToPolygons[tzname],
+                              numpy.ndarray):
+                    self.timezoneNamesToPolygons[tzname] = list(
+                        map(lambda p: prep(Polygon(p[0], p[1])),
+                        self.timezoneNamesToPolygons[tzname]))
                 polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
                 for polyIndex in polyIndices:
                     poly = self.timezoneNamesToPolygons[tzname][polyIndex]
                     if poly.contains_properly(queryPoint):
                         return tzname
-        distances = []
-        if forceTZ:
-            if possibleTimezones:
-                if len(possibleTimezones) == 1:
-                    return possibleTimezones.pop()
-                else:
-                    for tzname in possibleTimezones:
-                        polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
-                        for polyIndex in polyIndices:
-                            poly = self.unprepTimezoneNamesToPolygons[tzname][polyIndex]
-                            d = poly.distance(queryPoint)
-                            distances.append((d, tzname))
-            if len(distances) > 0:
-                return sorted(distances, key=lambda x: x[1])[0][1]
 
     @staticmethod
-    def read_tzworld(path=None):
+    def read_tzworld(path):
         reader = tzwhere.read_json
         return reader(path)
 
     @staticmethod
-    def read_json(path=None):
-        if path is None:
-            path = tzwhere.DEFAULT_JSON
+    def read_json(path):
         with open(path, 'r') as f:
             featureCollection = json.load(f)
         return featureCollection
@@ -205,13 +115,149 @@ class tzwhere(object):
         for feature in featureCollection['features']:
             tzname = feature['properties']['TZID']
             if feature['geometry']['type'] == 'Polygon':
-                polys = feature['geometry']['coordinates']
-                for poly in polys:
-                    yield (tzname, poly)
+                exterior = feature['geometry']['coordinates'][0]
+                interior = feature['geometry']['coordinates'][1:]
+                yield (tzname, (exterior, interior))
+
+
+def _construct_shapely_map(polygon_generator):
+    """Turn a (tz, polygon) generator, into our internal shapely mapping."""
+    timezoneNamesToPolygons = collections.defaultdict(list)
+    for (tzname, poly) in polygon_generator:
+        timezoneNamesToPolygons[tzname].append(
+            poly)
+    return timezoneNamesToPolygons
+
+def _construct_shortcuts(timezoneNamesToPolygons,
+                         shortcut_long, shortcut_lat):
+    ''' Construct our shortcuts for looking up polygons. Much faster
+    than using an r-tree '''
+
+    def find_min_max(ls, gridSize):
+        minLs = (math.floor(min(ls) / gridSize) *
+                 gridSize)
+        maxLs = (math.floor(max(ls) / gridSize) *
+                 gridSize)
+        return minLs, maxLs
+
+    timezoneLongitudeShortcuts = {}
+    timezoneLatitudeShortcuts = {}
+
+    for tzname in timezoneNamesToPolygons:
+        tzLngs = []
+        tzLats = []
+        for polyIndex, poly in enumerate(timezoneNamesToPolygons[tzname]):
+            lngs = [x[0] for x in poly[0]]
+            lats = [x[1] for x in poly[0]]
+            tzLngs.extend(lngs)
+            tzLats.extend(lats)
+            minLng, maxLng = find_min_max(lngs,
+                                          shortcut_long)
+            minLat, maxLat = find_min_max(lats,
+                                          shortcut_lat)
+            degree = minLng
+
+            while degree <= maxLng:
+                if degree not in timezoneLongitudeShortcuts:
+                    timezoneLongitudeShortcuts[degree] = {}
+
+                if tzname not in timezoneLongitudeShortcuts[degree]:
+                    timezoneLongitudeShortcuts[degree][tzname] = []
+
+                timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
+                degree = degree + shortcut_long
+
+            degree = minLat
+            while degree <= maxLat:
+                if degree not in timezoneLatitudeShortcuts:
+                    timezoneLatitudeShortcuts[degree] = {}
+
+                if tzname not in timezoneLatitudeShortcuts[degree]:
+                    timezoneLatitudeShortcuts[degree][tzname] = []
+
+                timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
+                degree = degree + shortcut_lat
+
+    # Convert things to tuples to save memory
+    for degree in timezoneLatitudeShortcuts:
+        for tzname in timezoneLatitudeShortcuts[degree].keys():
+            timezoneLatitudeShortcuts[degree][tzname] = \
+                tuple(timezoneLatitudeShortcuts[degree][tzname])
+    for degree in timezoneLongitudeShortcuts.keys():
+        for tzname in timezoneLongitudeShortcuts[degree].keys():
+            timezoneLongitudeShortcuts[degree][tzname] = \
+                tuple(timezoneLongitudeShortcuts[degree][tzname])
+
+    return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
 
 
 def main():
-    print('We have to implement a rewrite of that')
+
+    def intCast(x):
+        return (int(x[0] * 10000000), int(x[1] * 10000000))
+
+    from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection
+
+    def katana(geometry, threshold, count=0):
+        """Split a Polygon into two parts across it's shortest dimension"""
+        bounds = geometry.bounds
+        width = bounds[2] - bounds[0]
+        height = bounds[3] - bounds[1]
+        if max(width, height) <= threshold or count == 250:
+            # either the polygon is smaller than the threshold, or the maximum
+            # number of recursions has been reached
+            return [geometry]
+        if height >= width:
+            # split left to right
+            a = box(bounds[0], bounds[1], bounds[2], bounds[1]+height/2)
+            b = box(bounds[0], bounds[1]+height/2, bounds[2], bounds[3])
+        else:
+            # split top to bottom
+            a = box(bounds[0], bounds[1], bounds[0]+width/2, bounds[3])
+            b = box(bounds[0]+width/2, bounds[1], bounds[2], bounds[3])
+        result = []
+        for d in (a, b,):
+            c = geometry.intersection(d)
+            if not isinstance(c, GeometryCollection):
+                c = [c]
+            for e in c:
+                if isinstance(e, (Polygon, MultiPolygon)):
+                    result.extend(katana(e, threshold, count+1))
+        if count > 0:
+            return result
+        # convert multipart into singlepart
+        final_result = []
+        for g in result:
+            if isinstance(g, MultiPolygon):
+                final_result.extend(g)
+            else:
+                final_result.append(g)
+        return final_result
+
+    featureCollection = tzwhere.read_tzworld('tz_world.json')
+    pgen = tzwhere._feature_collection_polygons(featureCollection)
+    tzNamesToPolygons = collections.defaultdict(list)
+    for tzname, poly in pgen:
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        shapelyPoly = Polygon(poly[0], poly[1])
+        splitPolys = katana(shapelyPoly, 0.1)
+        tzNamesToPolygons[tzname].extend(splitPolys)
+
+    for tzname, polys in tzNamesToPolygons.items():
+        # TODO save everything to int32
+        tzNamesToPolygons[tzname] = \
+            numpy.asarray(tzNamesToPolygons[tzname])
+
+    with open('tz_world_polygons.pck', 'wb') as f:
+        pickle.dump(tzNamesToPolygons, f)
+
+    timezoneLongitudeShortcuts,\
+        timezoneLatitudeShortcuts = _construct_shortcuts(
+            tzNamesToPolygons, tzwhere.SHORTCUT_DEGREES_LONGITUDE,
+            tzwhere.SHORTCUT_DEGREES_LATITUDE)
+
+    with open('tz_world_shortcuts.pck', 'wb') as f:
+        pickle.dump((timezoneLongitudeShortcuts, timezoneLatitudeShortcuts), f)
 
 if __name__ == "__main__":
     main()
