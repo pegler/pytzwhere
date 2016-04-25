@@ -32,7 +32,7 @@ class tzwhere(object):
     DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
                                     'tz_world_polygons.pck')
 
-    def __init__(self, path=None, shapely=False, forceTZ=False, gridSize=1):
+    def __init__(self):
         '''
         Initializes the tzwhere class.
         @input_kind: Which filetype you want to read from
@@ -82,12 +82,96 @@ class tzwhere(object):
                               numpy.ndarray):
                     self.timezoneNamesToPolygons[tzname] = list(
                         map(lambda p: prep(Polygon(p[0], p[1])),
-                        self.timezoneNamesToPolygons[tzname]))
-                polyIndices = set(latTzOptions[tzname]).intersection(set(lngTzOptions[tzname]))
+                            self.timezoneNamesToPolygons[tzname]))
+                polyIndices = set(latTzOptions[tzname]).intersection(set(
+                    lngTzOptions[tzname]))
                 for polyIndex in polyIndices:
                     poly = self.timezoneNamesToPolygons[tzname][polyIndex]
                     if poly.contains_properly(queryPoint):
                         return tzname
+
+
+class prepareMap(object):
+
+    def __init__(self):
+        featureCollection = self.read_tzworld('tz_world.json')
+        pgen = self.feature_collection_polygons(featureCollection)
+        tzNamesToPolygons = collections.defaultdict(list)
+        for tzname, poly in pgen:
+            tzNamesToPolygons[tzname].append(poly)
+
+        for tzname, polys in tzNamesToPolygons.items():
+            # TODO save everything to int32
+            tzNamesToPolygons[tzname] = \
+                numpy.asarray(tzNamesToPolygons[tzname])
+
+        with open('tz_world_polygons.pck', 'wb') as f:
+            pickle.dump(tzNamesToPolygons, f)
+
+        timezoneLongitudeShortcuts,\
+            timezoneLatitudeShortcuts = self.construct_shortcuts(
+                tzNamesToPolygons, tzwhere.SHORTCUT_DEGREES_LONGITUDE,
+                tzwhere.SHORTCUT_DEGREES_LATITUDE)
+
+        with open('tz_world_shortcuts.pck', 'wb') as f:
+            pickle.dump((timezoneLongitudeShortcuts,
+                         timezoneLatitudeShortcuts), f)
+
+    @staticmethod
+    def construct_shortcuts(timezoneNamesToPolygons,
+                            shortcut_long, shortcut_lat):
+        ''' Construct our shortcuts for looking up polygons. Much faster
+        than using an r-tree '''
+
+        def find_min_max(ls, gridSize):
+            minLs = (math.floor(min(ls) / gridSize) *
+                     gridSize)
+            maxLs = (math.floor(max(ls) / gridSize) *
+                     gridSize)
+            return minLs, maxLs
+
+        timezoneLongitudeShortcuts = {}
+        timezoneLatitudeShortcuts = {}
+
+        for tzname in timezoneNamesToPolygons:
+            tzLngs = []
+            tzLats = []
+            for polyIndex, poly in enumerate(timezoneNamesToPolygons[tzname]):
+                lngs = [x[0] for x in poly[0]]
+                lats = [x[1] for x in poly[0]]
+                tzLngs.extend(lngs)
+                tzLats.extend(lats)
+                minLng, maxLng = find_min_max(
+                    lngs, shortcut_long)
+                minLat, maxLat = find_min_max(
+                    lats, shortcut_lat)
+                degree = minLng
+
+                while degree <= maxLng:
+                    if degree not in timezoneLongitudeShortcuts:
+                        timezoneLongitudeShortcuts[degree] =\
+                            collections.defaultdict(list)
+                    timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
+                    degree = degree + shortcut_long
+
+                degree = minLat
+                while degree <= maxLat:
+                    if degree not in timezoneLatitudeShortcuts:
+                        timezoneLatitudeShortcuts[degree] =\
+                            collections.defaultdict(list)
+                    timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
+                    degree = degree + shortcut_lat
+
+        # Convert things to tuples to save memory
+        for degree in timezoneLatitudeShortcuts:
+            for tzname in timezoneLatitudeShortcuts[degree].keys():
+                timezoneLatitudeShortcuts[degree][tzname] = \
+                    tuple(timezoneLatitudeShortcuts[degree][tzname])
+        for degree in timezoneLongitudeShortcuts.keys():
+            for tzname in timezoneLongitudeShortcuts[degree].keys():
+                timezoneLongitudeShortcuts[degree][tzname] = \
+                    tuple(timezoneLongitudeShortcuts[degree][tzname])
+        return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
 
     @staticmethod
     def read_tzworld(path):
@@ -101,7 +185,7 @@ class tzwhere(object):
         return featureCollection
 
     @staticmethod
-    def _feature_collection_polygons(featureCollection):
+    def feature_collection_polygons(featureCollection):
         """Turn a feature collection that you get from a pickle
         into an iterator over polygons.
 
@@ -119,145 +203,5 @@ class tzwhere(object):
                 interior = feature['geometry']['coordinates'][1:]
                 yield (tzname, (exterior, interior))
 
-
-def _construct_shapely_map(polygon_generator):
-    """Turn a (tz, polygon) generator, into our internal shapely mapping."""
-    timezoneNamesToPolygons = collections.defaultdict(list)
-    for (tzname, poly) in polygon_generator:
-        timezoneNamesToPolygons[tzname].append(
-            poly)
-    return timezoneNamesToPolygons
-
-def _construct_shortcuts(timezoneNamesToPolygons,
-                         shortcut_long, shortcut_lat):
-    ''' Construct our shortcuts for looking up polygons. Much faster
-    than using an r-tree '''
-
-    def find_min_max(ls, gridSize):
-        minLs = (math.floor(min(ls) / gridSize) *
-                 gridSize)
-        maxLs = (math.floor(max(ls) / gridSize) *
-                 gridSize)
-        return minLs, maxLs
-
-    timezoneLongitudeShortcuts = {}
-    timezoneLatitudeShortcuts = {}
-
-    for tzname in timezoneNamesToPolygons:
-        tzLngs = []
-        tzLats = []
-        for polyIndex, poly in enumerate(timezoneNamesToPolygons[tzname]):
-            lngs = [x[0] for x in poly[0]]
-            lats = [x[1] for x in poly[0]]
-            tzLngs.extend(lngs)
-            tzLats.extend(lats)
-            minLng, maxLng = find_min_max(lngs,
-                                          shortcut_long)
-            minLat, maxLat = find_min_max(lats,
-                                          shortcut_lat)
-            degree = minLng
-
-            while degree <= maxLng:
-                if degree not in timezoneLongitudeShortcuts:
-                    timezoneLongitudeShortcuts[degree] = {}
-
-                if tzname not in timezoneLongitudeShortcuts[degree]:
-                    timezoneLongitudeShortcuts[degree][tzname] = []
-
-                timezoneLongitudeShortcuts[degree][tzname].append(polyIndex)
-                degree = degree + shortcut_long
-
-            degree = minLat
-            while degree <= maxLat:
-                if degree not in timezoneLatitudeShortcuts:
-                    timezoneLatitudeShortcuts[degree] = {}
-
-                if tzname not in timezoneLatitudeShortcuts[degree]:
-                    timezoneLatitudeShortcuts[degree][tzname] = []
-
-                timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
-                degree = degree + shortcut_lat
-
-    # Convert things to tuples to save memory
-    for degree in timezoneLatitudeShortcuts:
-        for tzname in timezoneLatitudeShortcuts[degree].keys():
-            timezoneLatitudeShortcuts[degree][tzname] = \
-                tuple(timezoneLatitudeShortcuts[degree][tzname])
-    for degree in timezoneLongitudeShortcuts.keys():
-        for tzname in timezoneLongitudeShortcuts[degree].keys():
-            timezoneLongitudeShortcuts[degree][tzname] = \
-                tuple(timezoneLongitudeShortcuts[degree][tzname])
-
-    return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
-
-
-def main():
-
-    def intCast(x):
-        return (int(x[0] * 10000000), int(x[1] * 10000000))
-
-    from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection
-
-    def katana(geometry, threshold, count=0):
-        """Split a Polygon into two parts across it's shortest dimension"""
-        bounds = geometry.bounds
-        width = bounds[2] - bounds[0]
-        height = bounds[3] - bounds[1]
-        if max(width, height) <= threshold or count == 250:
-            # either the polygon is smaller than the threshold, or the maximum
-            # number of recursions has been reached
-            return [geometry]
-        if height >= width:
-            # split left to right
-            a = box(bounds[0], bounds[1], bounds[2], bounds[1]+height/2)
-            b = box(bounds[0], bounds[1]+height/2, bounds[2], bounds[3])
-        else:
-            # split top to bottom
-            a = box(bounds[0], bounds[1], bounds[0]+width/2, bounds[3])
-            b = box(bounds[0]+width/2, bounds[1], bounds[2], bounds[3])
-        result = []
-        for d in (a, b,):
-            c = geometry.intersection(d)
-            if not isinstance(c, GeometryCollection):
-                c = [c]
-            for e in c:
-                if isinstance(e, (Polygon, MultiPolygon)):
-                    result.extend(katana(e, threshold, count+1))
-        if count > 0:
-            return result
-        # convert multipart into singlepart
-        final_result = []
-        for g in result:
-            if isinstance(g, MultiPolygon):
-                final_result.extend(g)
-            else:
-                final_result.append(g)
-        return final_result
-
-    featureCollection = tzwhere.read_tzworld('tz_world.json')
-    pgen = tzwhere._feature_collection_polygons(featureCollection)
-    tzNamesToPolygons = collections.defaultdict(list)
-    for tzname, poly in pgen:
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        shapelyPoly = Polygon(poly[0], poly[1])
-        splitPolys = katana(shapelyPoly, 0.1)
-        tzNamesToPolygons[tzname].extend(splitPolys)
-
-    for tzname, polys in tzNamesToPolygons.items():
-        # TODO save everything to int32
-        tzNamesToPolygons[tzname] = \
-            numpy.asarray(tzNamesToPolygons[tzname])
-
-    with open('tz_world_polygons.pck', 'wb') as f:
-        pickle.dump(tzNamesToPolygons, f)
-
-    timezoneLongitudeShortcuts,\
-        timezoneLatitudeShortcuts = _construct_shortcuts(
-            tzNamesToPolygons, tzwhere.SHORTCUT_DEGREES_LONGITUDE,
-            tzwhere.SHORTCUT_DEGREES_LATITUDE)
-
-    with open('tz_world_shortcuts.pck', 'wb') as f:
-        pickle.dump((timezoneLongitudeShortcuts, timezoneLatitudeShortcuts), f)
-
 if __name__ == "__main__":
-    main()
+    prepareMap()
