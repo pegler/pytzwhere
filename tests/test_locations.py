@@ -38,7 +38,10 @@ class LocationTestCase(unittest.TestCase):
             ( 37.466666,  126.6166667, 'Inchon seaport',       'Asia/Seoul'),
             ( 42.8,       132.8833333, 'Nakhodka seaport',     'Asia/Vladivostok'),
             ( 50.26,       -5.051,     'Truro',                'Europe/London'),
-            ( 50.26,       -9.051,     'Sea off Cornwall',     None)
+            ( 50.26,       -9.051,     'Sea off Cornwall',     None),
+            (-110.72144, 35.82373), 'Hopie Nation', 'America/Phoenix'),
+            (-110.169460,35.751956), 'Deni inside Hopi Nation', 'America/Denver'),
+            (-133.73396065378114, 68.38068073677294), 'Upper hole in America/Yellowknife', 'America/Inuvik'),
         )
 
     TEST_LOCATIONS_FORCETZ = (
@@ -67,10 +70,7 @@ class LocationTestCase(unittest.TestCase):
             assert computed == expected
 
     def test_csv(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None)
-
-    def test_shapely(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True)
+        self._test_tzwhere(self.TEST_LOCATIONS)
 
     def test_forceTZ(self):
         self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True,

@@ -46,7 +46,6 @@ class tzwhere(object):
         with open(tzwhere.DEFAULT_SHORTCUTS, 'rb') as f:
             self.timezoneLongitudeShortcuts,\
                 self.timezoneLatitudeShortcuts = pickle.load(f)
-
         with open(tzwhere.DEFAULT_POLYGONS, 'rb') as f:
             self.timezoneNamesToPolygons = pickle.load(f)
 
