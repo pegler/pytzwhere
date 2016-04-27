@@ -27,3 +27,11 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+
+# JETBRAINS
+
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
+
+## Directory-based project format:
+.idea/
