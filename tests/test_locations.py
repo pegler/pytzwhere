@@ -53,8 +53,7 @@ class LocationTestCase(unittest.TestCase):
             ( 50.26,       -9.051,     'Far off Cornwall',     None)
     )
 
-    def _test_tzwhere(self, input_kind, locations, path, shapely=False,
-                      forceTZ=False):
+    def _test_tzwhere(selfn):
         start = datetime.datetime.now()
         w = tzwhere.tzwhere(input_kind, path, shapely=shapely, forceTZ=forceTZ)
         end = datetime.datetime.now()
@@ -68,12 +67,3 @@ class LocationTestCase(unittest.TestCase):
             ok = 'OK' if computed == expected else 'XX'
             print(template.format(loc, str(expected), str(computed), ok))
             assert computed == expected
-
-    def test_csv(self):
-        self._test_tzwhere(self.TEST_LOCATIONS)
-
-    def test_forceTZ(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True,
-                           forceTZ=True)
-        self._test_tzwhere('csv', self.TEST_LOCATIONS_FORCETZ, path=None,
-                           shapely=True, forceTZ=True)

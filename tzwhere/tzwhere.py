@@ -19,7 +19,6 @@ except ImportError:
 import math
 import numpy
 import os
-import pickle
 
 
 class tzwhere(object):
@@ -28,9 +27,9 @@ class tzwhere(object):
     SHORTCUT_DEGREES_LONGITUDE = 1
     # By default, use the data file in our package directory
     DEFAULT_SHORTCUTS = os.path.join(os.path.dirname(__file__),
-                                     'tz_world_shortcuts.pck')
+                                     'tz_world_shortcuts.json')
     DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
-                                    'tz_world_polygons.pck')
+                                    'tz_world.json')
 
     def __init__(self):
         '''
@@ -43,11 +42,22 @@ class tzwhere(object):
         timezone even if the point you are looking up is slightly outside it's
         bounds, you need to specify this during initialization arleady
         '''
-        with open(tzwhere.DEFAULT_SHORTCUTS, 'rb') as f:
+
+        featureCollection = read_tzworld(tzwhere.DEFAULT_POLYGONS)
+        pgen = feature_collection_polygons(featureCollection)
+        self.timezoneNamesToPolygons = collections.defaultdict(list)
+        for tzname, poly in pgen:
+            self.timezoneNamesToPolygons[tzname].append(poly)
+
+        for tzname, polys in self.timezoneNamesToPolygons.items():
+            # TODO save everything to int32
+            self.timezoneNamesToPolygons[tzname] = \
+                numpy.asarray(self.timezoneNamesToPolygons[tzname])
+
+        with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts,\
-                self.timezoneLatitudeShortcuts = pickle.load(f)
-        with open(tzwhere.DEFAULT_POLYGONS, 'rb') as f:
-            self.timezoneNamesToPolygons = pickle.load(f)
+                self.timezoneLatitudeShortcuts = json.load(f)
+
 
     def tzNameAt(self, latitude, longitude):
         '''
@@ -61,14 +71,14 @@ class tzwhere(object):
         'hack'. Introduces potential errors, be warned.
         '''
 
-        latTzOptions = self.timezoneLatitudeShortcuts[
+        latTzOptions = self.timezoneLatitudeShortcuts[str(
             (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) *
-             self.SHORTCUT_DEGREES_LATITUDE)
+             self.SHORTCUT_DEGREES_LATITUDE))
         ]
         latSet = set(latTzOptions.keys())
-        lngTzOptions = self.timezoneLongitudeShortcuts[
+        lngTzOptions = self.timezoneLongitudeShortcuts[str(
             (math.floor(longitude / self.SHORTCUT_DEGREES_LONGITUDE) *
-             self.SHORTCUT_DEGREES_LONGITUDE)
+             self.SHORTCUT_DEGREES_LONGITUDE))
         ]
         lngSet = set(lngTzOptions.keys())
         possibleTimezones = lngSet.intersection(latSet)
@@ -93,28 +103,24 @@ class tzwhere(object):
 class prepareMap(object):
 
     def __init__(self):
-        featureCollection = self.read_tzworld('tz_world.json')
-        pgen = self.feature_collection_polygons(featureCollection)
+        featureCollection = read_tzworld('tz_world.json')
+        pgen = feature_collection_polygons(featureCollection)
         tzNamesToPolygons = collections.defaultdict(list)
         for tzname, poly in pgen:
             tzNamesToPolygons[tzname].append(poly)
 
         for tzname, polys in tzNamesToPolygons.items():
-            # TODO save everything to int32
             tzNamesToPolygons[tzname] = \
                 numpy.asarray(tzNamesToPolygons[tzname])
-
-        with open('tz_world_polygons.pck', 'wb') as f:
-            pickle.dump(tzNamesToPolygons, f)
 
         timezoneLongitudeShortcuts,\
             timezoneLatitudeShortcuts = self.construct_shortcuts(
                 tzNamesToPolygons, tzwhere.SHORTCUT_DEGREES_LONGITUDE,
                 tzwhere.SHORTCUT_DEGREES_LATITUDE)
 
-        with open('tz_world_shortcuts.pck', 'wb') as f:
-            pickle.dump((timezoneLongitudeShortcuts,
-                         timezoneLatitudeShortcuts), f)
+        with open('tz_world_shortcuts.json', 'w') as f:
+            json.dump((timezoneLongitudeShortcuts,
+                      timezoneLatitudeShortcuts), f)
 
     @staticmethod
     def construct_shortcuts(timezoneNamesToPolygons,
@@ -172,35 +178,35 @@ class prepareMap(object):
                     tuple(timezoneLongitudeShortcuts[degree][tzname])
         return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
 
-    @staticmethod
-    def read_tzworld(path):
-        reader = tzwhere.read_json
-        return reader(path)
 
-    @staticmethod
-    def read_json(path):
-        with open(path, 'r') as f:
-            featureCollection = json.load(f)
-        return featureCollection
+def read_tzworld(path):
+    reader = read_json
+    return reader(path)
 
-    @staticmethod
-    def feature_collection_polygons(featureCollection):
-        """Turn a feature collection that you get from a pickle
-        into an iterator over polygons.
 
-        Given a featureCollection of the kind loaded from the json
-        input, unpack it to an iterator which produces a series of
-        (tzname, polygon) pairs, one for every polygon in the
-        featureCollection.  Here tzname is a string and polygon is a
-        list of floats.
+def read_json(path):
+    with open(path, 'r') as f:
+        featureCollection = json.load(f)
+    return featureCollection
 
-        """
-        for feature in featureCollection['features']:
-            tzname = feature['properties']['TZID']
-            if feature['geometry']['type'] == 'Polygon':
-                exterior = feature['geometry']['coordinates'][0]
-                interior = feature['geometry']['coordinates'][1:]
-                yield (tzname, (exterior, interior))
+
+def feature_collection_polygons(featureCollection):
+    """Turn a feature collection
+    into an iterator over polygons.
+
+    Given a featureCollection of the kind loaded from the json
+    input, unpack it to an iterator which produces a series of
+    (tzname, polygon) pairs, one for every polygon in the
+    featureCollection.  Here tzname is a string and polygon is a
+    list of floats.
+
+    """
+    for feature in featureCollection['features']:
+        tzname = feature['properties']['TZID']
+        if feature['geometry']['type'] == 'Polygon':
+            exterior = feature['geometry']['coordinates'][0]
+            interior = feature['geometry']['coordinates'][1:]
+            yield (tzname, (exterior, interior))
 
 if __name__ == "__main__":
     prepareMap()
