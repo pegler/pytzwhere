@@ -31,13 +31,9 @@ class tzwhere(object):
     DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
                                     'tz_world.json')
 
-    def __init__(self):
+    def __init__(self, forceTZ=False):
         '''
         Initializes the tzwhere class.
-        @input_kind: Which filetype you want to read from
-        @path: Where you want to read the input file from
-        @shapely: Whether you want to use shapely to represent the geometry.
-        Lookups become much faster at the cost of a slower initialization
         @forceTZ: If you want to force the lookup method to a return a
         timezone even if the point you are looking up is slightly outside it's
         bounds, you need to specify this during initialization arleady
@@ -46,20 +42,22 @@ class tzwhere(object):
         featureCollection = read_tzworld(tzwhere.DEFAULT_POLYGONS)
         pgen = feature_collection_polygons(featureCollection)
         self.timezoneNamesToPolygons = collections.defaultdict(list)
+        self.unprepTimezoneNamesToPolygons = collections.defaultdict(list)
         for tzname, poly in pgen:
             self.timezoneNamesToPolygons[tzname].append(poly)
-
         for tzname, polys in self.timezoneNamesToPolygons.items():
-            # TODO save everything to int32
             self.timezoneNamesToPolygons[tzname] = \
-                numpy.asarray(self.timezoneNamesToPolygons[tzname])
+                numpy.asarray(polys)
+            if forceTZ:
+                for poly in polys:
+                    self.unprepTimezoneNamesToPolygons[tzname].append(
+                        Polygon(poly[0], poly[1]))
 
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts,\
                 self.timezoneLatitudeShortcuts = json.load(f)
 
-
-    def tzNameAt(self, latitude, longitude):
+    def tzNameAt(self, latitude, longitude, forceTZ=False):
         '''
         Let's you lookup for a given latitude and longitude the appropriate
         timezone.
@@ -70,6 +68,10 @@ class tzwhere(object):
         reasonable close to a timezone already. Consider this a somewhat of a
         'hack'. Introduces potential errors, be warned.
         '''
+
+        if forceTZ:
+            assert self.forceTZ, 'You need to initialize tzwhere with forceTZ\
+                if you want to use the lookup workaround'
 
         latTzOptions = self.timezoneLatitudeShortcuts[str(
             (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) *
@@ -99,7 +101,27 @@ class tzwhere(object):
                     if poly.contains_properly(queryPoint):
                         return tzname
 
+        if forceTZ:
+            self.__forceTZ__(possibleTimezones, latTzOptions,
+                             lngTzOptions, queryPoint)
 
+    def __forceTZ__(self, possibleTimezones, latTzOptions,
+                    lngTzOptions, queryPoint):
+        distances = []
+        if possibleTimezones:
+            if len(possibleTimezones) == 1:
+                return possibleTimezones.pop()
+            else:
+                for tzname in possibleTimezones:
+                    polyIndices = set(latTzOptions[tzname]).intersection(
+                        set(lngTzOptions[tzname]))
+                    for polyIndex in polyIndices:
+                        poly = self.unprepTimezoneNamesToPolygons[
+                            tzname][polyIndex]
+                        d = poly.distance(queryPoint)
+                        distances.append((d, tzname))
+        if len(distances) > 0:
+            return sorted(distances, key=lambda x: x[1])[0][1]
 
 
 class prepareMap(object):
