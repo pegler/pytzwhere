@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 
-"""tzwhere.py - time zone computation from latitude/longitude.
+'''tzwhere.py - time zone computation from latitude/longitude.
 
 Ordinarily this is loaded as a module and instances of the tzwhere
-class are instantiated and queried directly, but the module can be run
-as a script too (this requires the docopt package to be installed).
-Run it with the -h option to see usage.
-
-"""
-from shapely.geometry import Polygon, Point
-from shapely.prepared import prep
+class are instantiated and queried directly
+'''
 
 import collections
 try:
@@ -19,6 +14,7 @@ except ImportError:
 import math
 import numpy
 import os
+import shapely as shp
 
 
 class tzwhere(object):
@@ -51,7 +47,7 @@ class tzwhere(object):
             if forceTZ:
                 for poly in polys:
                     self.unprepTimezoneNamesToPolygons[tzname].append(
-                        Polygon(poly[0], poly[1]))
+                        shp.Polygon(poly[0], poly[1]))
 
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts,\
@@ -85,14 +81,15 @@ class tzwhere(object):
         lngSet = set(lngTzOptions.keys())
         possibleTimezones = lngSet.intersection(latSet)
 
-        queryPoint = Point(longitude, latitude)
+        queryPoint = shp.Point(longitude, latitude)
 
         if possibleTimezones:
             for tzname in possibleTimezones:
                 if isinstance(self.timezoneNamesToPolygons[tzname],
                               numpy.ndarray):
                     self.timezoneNamesToPolygons[tzname] = list(
-                        map(lambda p: prep(Polygon(p[0], p[1])),
+                        map(lambda p: shp.prepared.prep(
+                            shp.Polygon(p[0], p[1])),
                             self.timezoneNamesToPolygons[tzname]))
                 polyIndices = set(latTzOptions[tzname]).intersection(set(
                     lngTzOptions[tzname]))
