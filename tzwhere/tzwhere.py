@@ -14,7 +14,8 @@ except ImportError:
 import math
 import numpy
 import os
-import shapely as shp
+import shapely.geometry as geometry
+import shapely.prepared as prepared
 
 
 class tzwhere(object):
@@ -45,13 +46,23 @@ class tzwhere(object):
             self.timezoneNamesToPolygons[tzname] = \
                 numpy.asarray(polys)
             if forceTZ:
-                for poly in polys:
-                    self.unprepTimezoneNamesToPolygons[tzname].append(
-                        shp.Polygon(poly[0], poly[1]))
-
+                self.unprepTimezoneNamesToPolygons[tzname] = \
+                    numpy.asarray(polys)
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts,\
                 self.timezoneLatitudeShortcuts = json.load(f)
+        self.forceTZ = forceTZ
+        for tzname in self.timezoneNamesToPolygons:
+            # Convert things to tuples to save memory
+            for degree in self.timezoneLatitudeShortcuts:
+                for tzname in self.timezoneLatitudeShortcuts[degree].keys():
+                    self.timezoneLatitudeShortcuts[degree][tzname] = \
+                        tuple(self.timezoneLatitudeShortcuts[degree][tzname])
+            for degree in self.timezoneLongitudeShortcuts.keys():
+                for tzname in self.timezoneLongitudeShortcuts[degree].keys():
+                    self.timezoneLongitudeShortcuts[degree][tzname] = \
+                        tuple(self.timezoneLongitudeShortcuts[degree][tzname])
+
 
     def tzNameAt(self, latitude, longitude, forceTZ=False):
         '''
@@ -60,14 +71,12 @@ class tzwhere(object):
         @latitude: latitude
         @longitude: longitude
         @forceTZ: If forceTZ is true and you can't find a valid timezone return
-        the closest timezone you can find instead. Only works if the point is
-        reasonable close to a timezone already. Consider this a somewhat of a
-        'hack'. Introduces potential errors, be warned.
+        the closest timezone you can find instead. Only works if the point has
+        the same integer value for its degree than the timezeone
         '''
 
         if forceTZ:
-            assert self.forceTZ, 'You need to initialize tzwhere with forceTZ\
-                if you want to use the lookup workaround'
+            assert self.forceTZ, 'You need to initialize tzwhere with forceTZ'
 
         latTzOptions = self.timezoneLatitudeShortcuts[str(
             (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) *
@@ -81,15 +90,15 @@ class tzwhere(object):
         lngSet = set(lngTzOptions.keys())
         possibleTimezones = lngSet.intersection(latSet)
 
-        queryPoint = shp.Point(longitude, latitude)
+        queryPoint = geometry.Point(longitude, latitude)
 
         if possibleTimezones:
             for tzname in possibleTimezones:
                 if isinstance(self.timezoneNamesToPolygons[tzname],
                               numpy.ndarray):
                     self.timezoneNamesToPolygons[tzname] = list(
-                        map(lambda p: shp.prepared.prep(
-                            shp.Polygon(p[0], p[1])),
+                        map(lambda p: prepared.prep(
+                            geometry.Polygon(p[0], p[1])),
                             self.timezoneNamesToPolygons[tzname]))
                 polyIndices = set(latTzOptions[tzname]).intersection(set(
                     lngTzOptions[tzname]))
@@ -110,6 +119,11 @@ class tzwhere(object):
                 return possibleTimezones.pop()
             else:
                 for tzname in possibleTimezones:
+                    if isinstance(self.unprepTimezoneNamesToPolygons[tzname],
+                                  numpy.ndarray):
+                        self.unprepTimezoneNamesToPolygons[tzname] = list(
+                            map(lambda p: geometry.Polygon(p[0], p[1]),
+                                self.timezoneNamesToPolygons[tzname]))
                     polyIndices = set(latTzOptions[tzname]).intersection(
                         set(lngTzOptions[tzname]))
                     for polyIndex in polyIndices:
@@ -187,18 +201,7 @@ class prepareMap(object):
                             collections.defaultdict(list)
                     timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + shortcut_lat
-
-        # Convert things to tuples to save memory
-        for degree in timezoneLatitudeShortcuts:
-            for tzname in timezoneLatitudeShortcuts[degree].keys():
-                timezoneLatitudeShortcuts[degree][tzname] = \
-                    tuple(timezoneLatitudeShortcuts[degree][tzname])
-        for degree in timezoneLongitudeShortcuts.keys():
-            for tzname in timezoneLongitudeShortcuts[degree].keys():
-                timezoneLongitudeShortcuts[degree][tzname] = \
-                    tuple(timezoneLongitudeShortcuts[degree][tzname])
         return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
-
 
 def read_tzworld(path):
     reader = read_json
