@@ -51,6 +51,7 @@ class tzwhere(object):
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts,\
                 self.timezoneLatitudeShortcuts = json.load(f)
+
         self.forceTZ = forceTZ
         for tzname in self.timezoneNamesToPolygons:
             # Convert things to tuples to save memory
@@ -62,7 +63,6 @@ class tzwhere(object):
                 for tzname in self.timezoneLongitudeShortcuts[degree].keys():
                     self.timezoneLongitudeShortcuts[degree][tzname] = \
                         tuple(self.timezoneLongitudeShortcuts[degree][tzname])
-
 
     def tzNameAt(self, latitude, longitude, forceTZ=False):
         '''
@@ -154,8 +154,8 @@ class prepareMap(object):
                 tzwhere.SHORTCUT_DEGREES_LATITUDE)
 
         with open('tz_world_shortcuts.json', 'w') as f:
-            json.dump((timezoneLongitudeShortcuts,
-                      timezoneLatitudeShortcuts), f)
+            json.dump(
+                (timezoneLongitudeShortcuts, timezoneLatitudeShortcuts), f)
 
     @staticmethod
     def construct_shortcuts(timezoneNamesToPolygons,
@@ -202,6 +202,7 @@ class prepareMap(object):
                     timezoneLatitudeShortcuts[degree][tzname].append(polyIndex)
                     degree = degree + shortcut_lat
         return timezoneLongitudeShortcuts, timezoneLatitudeShortcuts
+
 
 def read_tzworld(path):
     reader = read_json
