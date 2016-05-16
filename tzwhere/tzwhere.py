@@ -108,7 +108,7 @@ class tzwhere(object):
                         return tzname
 
         if forceTZ:
-            self.__forceTZ__(possibleTimezones, latTzOptions,
+            return self.__forceTZ__(possibleTimezones, latTzOptions,
                              lngTzOptions, queryPoint)
 
     def __forceTZ__(self, possibleTimezones, latTzOptions,
