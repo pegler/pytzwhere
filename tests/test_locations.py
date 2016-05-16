@@ -41,7 +41,7 @@ class LocationTestCase(unittest.TestCase):
             ( 50.26,       -9.051,     'Sea off Cornwall',     None),
             (-110.72144, 35.82373), 'Hopie Nation', 'America/Phoenix'),
             (-110.169460,35.751956), 'Deni inside Hopi Nation', 'America/Denver'),
-            (-133.73396065378114, 68.38068073677294), 'Upper hole in America/Yellowknife', 'America/Inuvik'),
+            (-133.73396065378114, 68.38068073677294), 'Upper hole in America/Yellowknife', 'America/Inuvik')
         )
 
     TEST_LOCATIONS_FORCETZ = (
