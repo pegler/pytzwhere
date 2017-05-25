@@ -229,7 +229,8 @@ class tzwhere(object):
                             d = poly.distance(queryPoint)
                             distances.append((d, tzname))
             if len(distances) > 0:
-                return sorted(distances, key=lambda x: x[1])[0][1]
+                # Sort by distances, and then return the timezone name of the first instance in the sorted list
+                return sorted(distances, key=lambda x: x[0])[0][1]
 
     @staticmethod
     def _point_inside_polygon(x, y, poly):
