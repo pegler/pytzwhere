@@ -8,7 +8,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='tzwhere',
-    version='3.0a',
+    version='3.0',
     packages=['tzwhere'],
     package_data={
         'tzwhere': ['tz_world.json']
