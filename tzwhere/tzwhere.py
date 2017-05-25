@@ -132,7 +132,7 @@ class tzwhere(object):
                         d = poly.distance(queryPoint)
                         distances.append((d, tzname))
         if len(distances) > 0:
-            return sorted(distances, key=lambda x: x[1])[0][1]
+            return sorted(distances, key=lambda x: x[0])[0][1]
 
 
 class prepareMap(object):
