@@ -20,8 +20,8 @@ import shapely.prepared as prepared
 
 class tzwhere(object):
 
-    SHORTCUT_DEGREES_LATITUDE = 1
-    SHORTCUT_DEGREES_LONGITUDE = 1
+    SHORTCUT_DEGREES_LATITUDE = 1.0
+    SHORTCUT_DEGREES_LONGITUDE = 1.0
     # By default, use the data file in our package directory
     DEFAULT_SHORTCUTS = os.path.join(os.path.dirname(__file__),
                                      'tz_world_shortcuts.json')
