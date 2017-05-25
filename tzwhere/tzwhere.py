@@ -43,14 +43,13 @@ class tzwhere(object):
         for tzname, poly in pgen:
             self.timezoneNamesToPolygons[tzname].append(poly)
         for tzname, polys in self.timezoneNamesToPolygons.items():
-            self.timezoneNamesToPolygons[tzname] = \
-                numpy.asarray(polys)
+            self.timezoneNamesToPolygons[tzname] = numpy.asarray(polys)
+
             if forceTZ:
-                self.unprepTimezoneNamesToPolygons[tzname] = \
-                    numpy.asarray(polys)
+                self.unprepTimezoneNamesToPolygons[tzname] = numpy.asarray(polys)
+
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
-            self.timezoneLongitudeShortcuts,\
-                self.timezoneLatitudeShortcuts = json.load(f)
+            self.timezoneLongitudeShortcuts, self.timezoneLatitudeShortcuts = json.load(f)
 
         self.forceTZ = forceTZ
         for tzname in self.timezoneNamesToPolygons:
@@ -59,6 +58,7 @@ class tzwhere(object):
                 for tzname in self.timezoneLatitudeShortcuts[degree].keys():
                     self.timezoneLatitudeShortcuts[degree][tzname] = \
                         tuple(self.timezoneLatitudeShortcuts[degree][tzname])
+
             for degree in self.timezoneLongitudeShortcuts.keys():
                 for tzname in self.timezoneLongitudeShortcuts[degree].keys():
                     self.timezoneLongitudeShortcuts[degree][tzname] = \
@@ -80,13 +80,13 @@ class tzwhere(object):
 
         latTzOptions = self.timezoneLatitudeShortcuts[str(
             (math.floor(latitude / self.SHORTCUT_DEGREES_LATITUDE) *
-             self.SHORTCUT_DEGREES_LATITUDE))
-        ]
+             self.SHORTCUT_DEGREES_LATITUDE)
+        )]
         latSet = set(latTzOptions.keys())
         lngTzOptions = self.timezoneLongitudeShortcuts[str(
             (math.floor(longitude / self.SHORTCUT_DEGREES_LONGITUDE) *
-             self.SHORTCUT_DEGREES_LONGITUDE))
-        ]
+             self.SHORTCUT_DEGREES_LONGITUDE)
+        )]
         lngSet = set(lngTzOptions.keys())
         possibleTimezones = lngSet.intersection(latSet)
 
@@ -94,14 +94,16 @@ class tzwhere(object):
 
         if possibleTimezones:
             for tzname in possibleTimezones:
-                if isinstance(self.timezoneNamesToPolygons[tzname],
-                              numpy.ndarray):
+                if isinstance(self.timezoneNamesToPolygons[tzname], numpy.ndarray):
                     self.timezoneNamesToPolygons[tzname] = list(
                         map(lambda p: prepared.prep(
-                            geometry.Polygon(p[0], p[1])),
-                            self.timezoneNamesToPolygons[tzname]))
+                                geometry.Polygon(p[0], p[1])
+                            ), self.timezoneNamesToPolygons[tzname]))
+
                 polyIndices = set(latTzOptions[tzname]).intersection(set(
-                    lngTzOptions[tzname]))
+                    lngTzOptions[tzname]
+                ))
+
                 for polyIndex in polyIndices:
                     poly = self.timezoneNamesToPolygons[tzname][polyIndex]
                     if poly.contains_properly(queryPoint):
@@ -122,7 +124,7 @@ class tzwhere(object):
                     if isinstance(self.unprepTimezoneNamesToPolygons[tzname],
                                   numpy.ndarray):
                         self.unprepTimezoneNamesToPolygons[tzname] = list(
-                            map(lambda p: geometry.Polygon(p[0], p[1]),
+                            map(lambda p: p.context if isinstance(p, prepared.PreparedGeometry) else geometry.Polygon(p[0], p[1]),
                                 self.timezoneNamesToPolygons[tzname]))
                     polyIndices = set(latTzOptions[tzname]).intersection(
                         set(lngTzOptions[tzname]))
