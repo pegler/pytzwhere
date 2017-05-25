@@ -38,7 +38,10 @@ class LocationTestCase(unittest.TestCase):
             ( 37.466666,  126.6166667, 'Inchon seaport',       'Asia/Seoul'),
             ( 42.8,       132.8833333, 'Nakhodka seaport',     'Asia/Vladivostok'),
             ( 50.26,       -5.051,     'Truro',                'Europe/London'),
-            ( 50.26,       -9.051,     'Sea off Cornwall',     None)
+            ( 50.26,       -9.051,     'Sea off Cornwall',     None),
+            ( 35.82373, -110.72144, 'Hopi Nation', 'America/Phoenix'),
+            ( 35.751956, -110.169460, 'Deni inside Hopi Nation', 'America/Denver'),
+            ( 68.38068073677294, -133.73396065378114, 'Upper hole in America/Yellowknife', 'America/Inuvik')
         )
 
     TEST_LOCATIONS_FORCETZ = (
@@ -51,10 +54,9 @@ class LocationTestCase(unittest.TestCase):
             ( 50.26,       -9.051,     'Far off Cornwall',     None)
     )
 
-    def _test_tzwhere(self, input_kind, locations, path, shapely=False,
-                      forceTZ=False):
+    def _test_tzwhere(self, locations, forceTZ):
         start = datetime.datetime.now()
-        w = tzwhere.tzwhere(input_kind, path, shapely=shapely, forceTZ=forceTZ)
+        w = tzwhere.tzwhere(forceTZ=forceTZ)
         end = datetime.datetime.now()
         print('Initialized in: '),
         print(end - start)
@@ -67,14 +69,8 @@ class LocationTestCase(unittest.TestCase):
             print(template.format(loc, str(expected), str(computed), ok))
             assert computed == expected
 
-    def test_csv(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None)
-
-    def test_shapely(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True)
+    def test_lookup(self):
+        self._test_tzwhere(self.TEST_LOCATIONS,forceTZ=False)
 
     def test_forceTZ(self):
-        self._test_tzwhere('csv', self.TEST_LOCATIONS, path=None, shapely=True,
-                           forceTZ=True)
-        self._test_tzwhere('csv', self.TEST_LOCATIONS_FORCETZ, path=None,
-                           shapely=True, forceTZ=True)
+        self._test_tzwhere(self.TEST_LOCATIONS_FORCETZ,forceTZ=True)
