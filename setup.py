@@ -11,8 +11,11 @@ setup(
     version='3.0',
     packages=['tzwhere'],
     package_data={
-        'tzwhere': ['tz_world.json']
-        },
+        'tzwhere': [
+            'tz_world.json',
+            'tz_world_shortcuts.json'
+        ]
+    },
     include_package_data=True,
     install_requires=[
         'shapely'
