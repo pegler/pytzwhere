@@ -12,10 +12,19 @@ try:
 except ImportError:
     import simplejson as json
 import math
-import numpy
 import os
 import shapely.geometry as geometry
 import shapely.prepared as prepared
+
+# We can save about 222MB of RAM by turning our polygon lists into
+# numpy arrays rather than tuples, if numpy is installed.
+try:
+    import numpy
+    WRAP = numpy.asarray
+    COLLECTION_TYPE = numpy.ndarray
+except ImportError:
+    WRAP = tuple
+    COLLECTION_TYPE = tuple
 
 
 class tzwhere(object):
@@ -43,10 +52,10 @@ class tzwhere(object):
         for tzname, poly in pgen:
             self.timezoneNamesToPolygons[tzname].append(poly)
         for tzname, polys in self.timezoneNamesToPolygons.items():
-            self.timezoneNamesToPolygons[tzname] = numpy.asarray(polys)
+            self.timezoneNamesToPolygons[tzname] = WRAP(polys)
 
             if forceTZ:
-                self.unprepTimezoneNamesToPolygons[tzname] = numpy.asarray(polys)
+                self.unprepTimezoneNamesToPolygons[tzname] = WRAP(polys)
 
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts, self.timezoneLatitudeShortcuts = json.load(f)
@@ -94,7 +103,7 @@ class tzwhere(object):
 
         if possibleTimezones:
             for tzname in possibleTimezones:
-                if isinstance(self.timezoneNamesToPolygons[tzname], numpy.ndarray):
+                if isinstance(self.timezoneNamesToPolygons[tzname], COLLECTION_TYPE):
                     self.timezoneNamesToPolygons[tzname] = list(
                         map(lambda p: prepared.prep(
                                 geometry.Polygon(p[0], p[1])
@@ -122,7 +131,7 @@ class tzwhere(object):
             else:
                 for tzname in possibleTimezones:
                     if isinstance(self.unprepTimezoneNamesToPolygons[tzname],
-                                  numpy.ndarray):
+                                  COLLECTION_TYPE):
                         self.unprepTimezoneNamesToPolygons[tzname] = list(
                             map(lambda p: p.context if isinstance(p, prepared.PreparedGeometry) else geometry.Polygon(p[0], p[1]),
                                 self.timezoneNamesToPolygons[tzname]))
@@ -148,7 +157,7 @@ class prepareMap(object):
 
         for tzname, polys in tzNamesToPolygons.items():
             tzNamesToPolygons[tzname] = \
-                numpy.asarray(tzNamesToPolygons[tzname])
+                WRAP(tzNamesToPolygons[tzname])
 
         timezoneLongitudeShortcuts,\
             timezoneLatitudeShortcuts = self.construct_shortcuts(

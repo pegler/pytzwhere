@@ -15,7 +15,6 @@ setup(
         },
     include_package_data=True,
     install_requires=[
-        'numpy',
         'shapely'
     ],
     license='MIT License',
