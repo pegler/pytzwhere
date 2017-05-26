@@ -20,6 +20,6 @@ The polygons used for building the timezones are based on VMAP0. Sometimes point
 
 Dependencies:
 
-  * `numpy`
+  * `numpy` (optional)
 
   * `shapely`
