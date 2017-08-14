@@ -12,7 +12,7 @@ setup(
     packages=['tzwhere'],
     package_data={
         'tzwhere': [
-            'tz_world.json',
+            'tz_world.json.gz',
             'tz_world_shortcuts.json'
         ]
     },
