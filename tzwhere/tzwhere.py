@@ -8,10 +8,14 @@ class are instantiated and queried directly
 
 import collections
 try:
-    import json
-except ImportError:
-    import simplejson as json
+    import ujson as json # loads 2 seconds faster than normal json
+except:
+    try:
+        import json
+    except ImportError:
+        import simplejson as json
 import math
+import gzip
 import os
 import shapely.geometry as geometry
 import shapely.prepared as prepared
@@ -26,6 +30,9 @@ except ImportError:
     WRAP = tuple
     COLLECTION_TYPE = tuple
 
+# for navigation and pulling values/files
+this_dir, this_filename = os.path.split(__file__)
+BASE_DIR = os.path.dirname(this_dir)
 
 class tzwhere(object):
 
@@ -35,7 +42,7 @@ class tzwhere(object):
     DEFAULT_SHORTCUTS = os.path.join(os.path.dirname(__file__),
                                      'tz_world_shortcuts.json')
     DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
-                                    'tz_world.json')
+                                    'tz_world.json.gz')
 
     def __init__(self, forceTZ=False):
         '''
@@ -149,7 +156,11 @@ class tzwhere(object):
 class prepareMap(object):
 
     def __init__(self):
-        featureCollection = read_tzworld('tz_world.json')
+        DEFAULT_SHORTCUTS = os.path.join(os.path.dirname(__file__),
+                                         'tz_world_shortcuts.json')
+        DEFAULT_POLYGONS = os.path.join(os.path.dirname(__file__),
+                                        'tz_world.json.gz')
+        featureCollection = read_tzworld(DEFAULT_POLYGONS)
         pgen = feature_collection_polygons(featureCollection)
         tzNamesToPolygons = collections.defaultdict(list)
         for tzname, poly in pgen:
@@ -164,7 +175,7 @@ class prepareMap(object):
                 tzNamesToPolygons, tzwhere.SHORTCUT_DEGREES_LONGITUDE,
                 tzwhere.SHORTCUT_DEGREES_LATITUDE)
 
-        with open('tz_world_shortcuts.json', 'w') as f:
+        with open(DEFAULT_SHORTCUTS, 'w') as f:
             json.dump(
                 (timezoneLongitudeShortcuts, timezoneLatitudeShortcuts), f)
 
@@ -221,8 +232,8 @@ def read_tzworld(path):
 
 
 def read_json(path):
-    with open(path, 'r') as f:
-        featureCollection = json.load(f)
+    with gzip.open(path, "rb") as f:
+        featureCollection = json.loads(f.read().decode("utf-8"))
     return featureCollection
 
 
