@@ -23,3 +23,22 @@ Dependencies:
   * `numpy` (optional)
 
   * `shapely`
+
+
+
+**forceTZ**
+
+If the coordinates provided are outside of the currently defined timezone boundaries, the `tzwhere` function will return `None`. If you would like to match to the closest timezone, use the forceTZ parameter.
+
+Example:
+
+    >>> from tzwhere import tzwhere
+    >>> tz = tzwhere.tzwhere()
+    >>> print(tz.tzNameAt(53.68193999999999, -6.239169999999998))
+    None
+
+    >>> from tzwhere import tzwhere
+    >>> tz = tzwhere.tzwhere(forceTZ=True)
+    >>> print(tz.tzNameAt(53.68193999999999, -6.239169999999998, forceTZ=True))
+    Europe/Dublin
+
