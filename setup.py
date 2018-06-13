@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 
@@ -7,13 +7,12 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='tzwhere',
+    name='geodjango-tzwhere',
     version='0.1',
-    packages=['geodjango-tzwhere'],
+    packages=find_packages(),
     package_data={
         'geodjango-tzwhere': [
             'tz_world.json.gz',
-            'tz_world_shortcuts.json'
         ]
     },
     include_package_data=True,
@@ -25,7 +24,7 @@ setup(
     long_description=README,
     url='https://github.com/cjh79/geodjango-tzwhere',
     author='Chris Hawes',
-    author_email='matt@pegler.co',
+    author_email='chrishawes@gmail.com',
     maintainer='Christopher Hawes',
     maintainer_email='chrishawes@gmail.com',
     classifiers=[
