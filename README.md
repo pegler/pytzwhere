@@ -1,11 +1,11 @@
-pytzwhere [![Build Status](https://travis-ci.org/pegler/pytzwhere.svg)](https://travis-ci.org/pegler/pytzwhere) [![Coverage Status](https://coveralls.io/repos/pegler/pytzwhere/badge.svg)](https://coveralls.io/r/pegler/pytzwhere)
+geodjango-tzwhere
 =========
 
-pytzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline. 
+geodjango-tzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline using GeoDjango and PostGIS.
 
-Version 3.0 fixes how `pytzwhere` deals with [holes](https://github.com/pegler/pytzwhere/issues/34) in timezones. It is recommended that you use version 3.0.
+This package was originally ported from https://github.com/pegler/pytzwhere, and has the same API. However, instead of loading the geojson timezone data into memory each time the app is run, this package will store it in your database during migration. Lookups should be faster, and the overhead of parsing the geojson each time is avoided.
 
-It is a port from https://github.com/mattbornski/tzwhere with a few improvements. The underlying timezone data is based on work done by [Eric Muller](http://efele.net/maps/tz/world/)
+I have used this with PostgreSQL/PostGIS. It probably will work with SpatiaLite as well but I have not tested it there.
 
 If used as a library, basic usage is as follows:
 
@@ -20,15 +20,17 @@ The polygons used for building the timezones are based on VMAP0. Sometimes point
 
 Dependencies:
 
-  * `numpy` (optional)
+  * `django`
 
-  * `shapely`
+  * `PostGIS` or possibly some other spatial database system
 
 
 
 **forceTZ**
 
-If the coordinates provided are outside of the currently defined timezone boundaries, the `tzwhere` function will return `None`. If you would like to match to the closest timezone, use the forceTZ parameter.
+If the coordinates provided are outside of the currently defined timezone boundaries, the `tzwhere` function will return `None`. If you would like to match to the closest timezone, use the `forceTZ` parameter.
+
+Unlike pytzwhere, the `forceTZ` parameter does not need to be provided at `tzwhere` init time. You can provide it with your call to `tzNameAt()`.
 
 Example:
 
