@@ -39,7 +39,7 @@ class tzwhere(object):
         point = Point(longitude, latitude, srid=4326)
         zones = Timezone.objects.filter(polygon__contains=point)
         if len(zones):
-            return zones[0]
+            return zones[0].name
         elif forceTZ:
             # Return timezone with nearest polygon
             # Limit search to within 2 degrees, otherwise the query takes too long (DWithin makes use of index)
@@ -48,5 +48,5 @@ class tzwhere(object):
                 .annotate(distance=Distance('polygon', point))\
                 .order_by('distance')
             if len(matches):
-                return matches[0]
-            return ''
+                return matches[0].name
+            return None
