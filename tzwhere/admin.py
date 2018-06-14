@@ -1,7 +1,7 @@
 from django.contrib.gis import admin
 from django.contrib.gis.admin import OSMGeoAdmin
 
-from geodjango_tzwhere.models import Timezone
+from tzwhere.models import Timezone
 
 
 class TimezoneAdmin(OSMGeoAdmin):

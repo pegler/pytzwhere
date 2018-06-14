@@ -8,11 +8,11 @@ import json
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.db import migrations
 
-from geodjango_tzwhere.tzwhere import tzwhere
+from tzwhere.tzwhere import tzwhere
 
 
 def load_timezones(apps, schema_editor):
-    Timezone = apps.get_model('geodjango_tzwhere', 'Timezone')
+    Timezone = apps.get_model('tzwhere', 'Timezone')
 
     with gzip.open(tzwhere.DEFAULT_POLYGONS, 'rb') as f:
         featureCollection = json.loads(f.read().decode('utf-8'))
@@ -30,7 +30,7 @@ def load_timezones(apps, schema_editor):
 
 
 def delete_timezones(apps, schema_editor):
-    Timezone = apps.get_model('geodjango_tzwhere', 'Timezone')
+    Timezone = apps.get_model('tzwhere', 'Timezone')
     Timezone.objects.all().delete()
 
 
@@ -54,7 +54,7 @@ def feature_collection_polygons(featureCollection):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('geodjango_tzwhere', '0001_initial'),
+        ('tzwhere', '0001_initial'),
     ]
 
     operations = [

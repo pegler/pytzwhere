@@ -6,7 +6,7 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 
-from geodjango_tzwhere.models import Timezone
+from tzwhere.models import Timezone
 
 try:
     import ujson as json # loads 2 seconds faster than normal json
