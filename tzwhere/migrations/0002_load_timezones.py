@@ -18,15 +18,10 @@ def load_timezones(apps, schema_editor):
         featureCollection = json.loads(f.read().decode('utf-8'))
 
     for name, poly in feature_collection_polygons(featureCollection):
-        try:
-            tz = Timezone.objects.get(name=name)
-            tz.polygon = tz.polygon.union(MultiPolygon([poly]))
-            tz.save()
-        except Timezone.DoesNotExist:
-            Timezone.objects.create(
-                name=name,
-                polygon=MultiPolygon([poly]),
-            )
+        Timezone.objects.create(
+            name=name,
+            polygon=MultiPolygon([poly]),
+        )
 
 
 def delete_timezones(apps, schema_editor):
