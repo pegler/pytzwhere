@@ -3,9 +3,9 @@ geodjango-tzwhere
 
 geodjango-tzwhere is a Python library to lookup the timezone for a given lat/lng entirely offline using GeoDjango and PostGIS.
 
-This package was originally ported from https://github.com/pegler/pytzwhere, and has the same API. However, instead of loading the geojson timezone data into memory each time the app is run, this package will store it in your database during migration. Lookups should be faster, and the overhead of parsing the geojson each time is avoided.
+This package was originally forked from https://github.com/pegler/pytzwhere, and has the same API. However, instead of loading the geojson timezone data into memory each time the app is run, this package will store it in your database during migration. Lookups should be faster, and the overhead of parsing the geojson each time is avoided.
 
-I have used this with PostgreSQL/PostGIS. It probably will work with SpatiaLite as well but I have not tested it there.
+I have tested this with PostgreSQL/PostGIS. It probably will work with SpatiaLite as well but I have not tested it there.
 
 If used as a library, basic usage is as follows:
 
@@ -22,7 +22,7 @@ Dependencies:
 
   * `django`
 
-  * `PostGIS` or possibly some other spatial database system
+  * `PostGIS` or possibly some other spatial database system (at your own risk)
 
 
 
