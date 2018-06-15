@@ -17,7 +17,7 @@ setup(
     },
     include_package_data=True,
     install_requires=[
-        'django'
+        'django>=1.11'
     ],
     license='MIT License',
     description='Python library to look up timezone from lat / long offline',
