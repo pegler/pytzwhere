@@ -49,7 +49,7 @@ class tzwhere(object):
         Initializes the tzwhere class.
         @forceTZ: If you want to force the lookup method to a return a
         timezone even if the point you are looking up is slightly outside it's
-        bounds, you need to specify this during initialization arleady
+        bounds, you need to specify this during initialization already
         '''
 
         featureCollection = read_tzworld(tzwhere.DEFAULT_POLYGONS)
