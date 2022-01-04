@@ -26,9 +26,11 @@ try:
     import numpy
     WRAP = numpy.asarray
     COLLECTION_TYPE = numpy.ndarray
+    numpy_avail = True
 except ImportError:
     WRAP = tuple
     COLLECTION_TYPE = tuple
+    numpy_avail = False
 
 # for navigation and pulling values/files
 this_dir, this_filename = os.path.split(__file__)
@@ -59,10 +61,14 @@ class tzwhere(object):
         for tzname, poly in pgen:
             self.timezoneNamesToPolygons[tzname].append(poly)
         for tzname, polys in self.timezoneNamesToPolygons.items():
-            self.timezoneNamesToPolygons[tzname] = WRAP(polys)
-
-            if forceTZ:
-                self.unprepTimezoneNamesToPolygons[tzname] = WRAP(polys)
+            if numpy_avail:
+                self.timezoneNamesToPolygons[tzname] = WRAP(polys, dtype=object)
+                if forceTZ:
+                    self.unprepTimezoneNamesToPolygons[tzname] = WRAP(polys, dtype=object)
+            else:
+                self.timezoneNamesToPolygons[tzname] = WRAP(polys)
+                if forceTZ:
+                    self.unprepTimezoneNamesToPolygons[tzname] = WRAP(polys)
 
         with open(tzwhere.DEFAULT_SHORTCUTS, 'r') as f:
             self.timezoneLongitudeShortcuts, self.timezoneLatitudeShortcuts = json.load(f)
