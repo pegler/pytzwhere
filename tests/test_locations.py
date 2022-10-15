@@ -1,9 +1,11 @@
-from tzwhere import tzwhere
 import datetime
-import unittest
+
+from django.test import TestCase
+
+from tzwhere import tzwhere
 
 
-class LocationTestCase(unittest.TestCase):
+class LocationTestCase(TestCase):
 
     TEST_LOCATIONS = (
             ( 35.295953,  -89.662186,  'Arlington, TN',        'America/Chicago'),
@@ -51,7 +53,7 @@ class LocationTestCase(unittest.TestCase):
             ( 40.7271,   -73.98,       'Shore Lake Michigan',  'America/New_York'),
             ( 50.1536,   -8.051,       'Off Cornwall',         'Europe/London'),
             ( 49.2698,   -123.1302,    'Vancouver',            'America/Vancouver'),
-            ( 50.26,       -9.051,     'Far off Cornwall',     None)
+            ( 50.26,       -9.051,     'Far off Cornwall',     'Europe/Dublin'),
     )
 
     def _test_tzwhere(self, locations, forceTZ):
