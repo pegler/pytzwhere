@@ -24,7 +24,8 @@ import shapely.prepared as prepared
 # numpy arrays rather than tuples, if numpy is installed.
 try:
     import numpy
-    WRAP = numpy.asarray
+    def WRAP(polys):
+        return numpy.asarray(polys, dtype=object)
     COLLECTION_TYPE = numpy.ndarray
 except ImportError:
     WRAP = tuple
